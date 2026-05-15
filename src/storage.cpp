@@ -54,6 +54,7 @@ namespace Storage {
         cfg.extraMdnsTag  = doc["extraMdnsTag"] | "wled";
 
         cfg.led.type       = static_cast<LedType>(doc["led"]["type"] | static_cast<int>(LedType::WS2812));
+        cfg.led.rgbwOrder  = static_cast<LedConfig::RgbwOrder>(doc["led"]["rgbwOrder"] | static_cast<int>(LedConfig::RgbwOrder::GRBW));
 
         if (JsonArray jsonSegments = doc["segments"].as<JsonArray>(); !jsonSegments.isNull() && jsonSegments.size() > 0) {
             cfg.led.deserializeSegments(jsonSegments);
@@ -96,6 +97,7 @@ namespace Storage {
         doc["extraMdnsTag"]        = cfg.extraMdnsTag;
 
         doc["led"]["type"]       = static_cast<uint8_t>(cfg.led.type);
+        doc["led"]["rgbwOrder"]  = static_cast<uint8_t>(cfg.led.rgbwOrder);
 
         JsonArray segArray = doc["segments"].to<JsonArray>();
         cfg.led.serializeSegments(segArray);

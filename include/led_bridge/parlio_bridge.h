@@ -48,6 +48,7 @@ struct parlio_bridge : public led_bridge, InternalBuffer<DOUBLEBUFFER_SUPPORT>
 
     uint16_t _totalLedsNumber = 0;
     LedType _ledsType = LedType::WS2812;
+    LedConfig::RgbwOrder _rgbwOrder = LedConfig::RgbwOrder::GRBW;
 
     struct {
         const spi_host_device_t SELECTED_SPI_HOST = SPI2_HOST;
@@ -187,6 +188,7 @@ struct parlio_bridge : public led_bridge, InternalBuffer<DOUBLEBUFFER_SUPPORT>
 
         _totalLedsNumber = cfgLedNumLeds;
         _ledsType = cfgLedType;
+        _rgbwOrder = Config::cfg.led.rgbwOrder;
 
         if (_ledsType == LedType::SK6812)
         {
@@ -199,7 +201,7 @@ struct parlio_bridge : public led_bridge, InternalBuffer<DOUBLEBUFFER_SUPPORT>
                 .strip_gpio_num = cfgSegments.front().data,
                 .max_leds = static_cast<uint32_t>(cfgLedNumLeds),
                 .led_model = (_ledsType == LedType::SK6812) ? LED_MODEL_SK6812 : LED_MODEL_WS2812,
-                .color_component_format = (_ledsType == LedType::SK6812) ? LED_STRIP_COLOR_COMPONENT_FMT_GRBW : LED_STRIP_COLOR_COMPONENT_FMT_GRB,
+                .color_component_format = colorComponentFormat(),
                 .flags = {
                     .invert_out = false,
                 }
@@ -246,6 +248,7 @@ struct parlio_bridge : public led_bridge, InternalBuffer<DOUBLEBUFFER_SUPPORT>
             else if (num_segments <= 8) { parlio_data_width = 8; }
 
             if (parlio_neopixel_init(parlio_data_width, gpio_nums, max_segment_length, (_ledsType == LedType::SK6812))) {
+                strip.rgbw_order = _rgbwOrder;
                 for(int i = 0; i < cfgSegments.size(); i++) {
                     const auto& seg = cfgSegments[i];
                         int nextIndex = (i + 1 < cfgSegments.size()) ? cfgSegments[i + 1].startIndex : cfgLedNumLeds;
@@ -312,6 +315,25 @@ struct parlio_bridge : public led_bridge, InternalBuffer<DOUBLEBUFFER_SUPPORT>
                 releaseDriverResources();
             }
         }        
+    }
+
+    inline led_color_component_format_t colorComponentFormat() const
+    {
+        if (_ledsType != LedType::SK6812) {
+            return LED_STRIP_COLOR_COMPONENT_FMT_GRB;
+        }
+
+        if (_rgbwOrder == LedConfig::RgbwOrder::WGRB) {
+            led_color_component_format_t format = {};
+            format.format.r_pos = 2;
+            format.format.g_pos = 1;
+            format.format.b_pos = 3;
+            format.format.w_pos = 0;
+            format.format.num_components = 4;
+            return format;
+        }
+
+        return LED_STRIP_COLOR_COMPONENT_FMT_GRBW;
     }
 
     inline std::pair<int,int> findHandle(int& index) const {
@@ -426,6 +448,7 @@ struct parlio_bridge : public led_bridge, InternalBuffer<DOUBLEBUFFER_SUPPORT>
         uint16_t num_leds;
         uint8_t  data_width;
         bool     is_rgbw;
+        LedConfig::RgbwOrder rgbw_order;
         uint16_t ticks_per_led;
         volatile bool is_transfering;
         int64_t next_frame_allowed_at;
@@ -441,7 +464,12 @@ struct parlio_bridge : public led_bridge, InternalBuffer<DOUBLEBUFFER_SUPPORT>
         uint8_t bits = strip.is_rgbw ? 32 : 24;
 
         if (strip.is_rgbw) {
-            color = (g << 24) | (r << 16) | (b << 8) | w;
+            if (strip.rgbw_order == LedConfig::RgbwOrder::WGRB) {
+                color = (w << 24) | (g << 16) | (r << 8) | b;
+            }
+            else {
+                color = (g << 24) | (r << 16) | (b << 8) | w;
+            }
         } else {
             color = (g << 16) | (r << 8) | b;
         }
@@ -492,6 +520,7 @@ struct parlio_bridge : public led_bridge, InternalBuffer<DOUBLEBUFFER_SUPPORT>
 
         strip.num_leds = num_leds;
         strip.is_rgbw = is_rgbw;
+        strip.rgbw_order = Config::cfg.led.rgbwOrder;
         strip.data_width = data_width;
 
         strip.is_transfering = false;

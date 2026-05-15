@@ -12,8 +12,13 @@ function setCalibration(gain, r, g, b) {
 function toggleCalibration() {
     const ledTypeSelect = document.getElementById('ledType');
     const calSection = document.getElementById('whiteCalibration');
+    const rgbwOrderControl = document.getElementById('rgbwOrderControl');
+    const isRgbw = ledTypeSelect.value === "1";
     
-    calSection.style.display = (ledTypeSelect.value === "1") ? "block" : "none";
+    calSection.style.display = isRgbw ? "block" : "none";
+    if (rgbwOrderControl) {
+        rgbwOrderControl.style.display = isRgbw ? "block" : "none";
+    }
 }
 
 function setupCalibration(){

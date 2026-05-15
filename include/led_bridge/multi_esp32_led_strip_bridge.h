@@ -52,6 +52,7 @@ struct multi_esp32_led_strip_bridge : public led_bridge, InternalBuffer<DOUBLEBU
 
     uint16_t _totalLedsNumber = 0;
     LedType _ledsType = LedType::WS2812;    
+    LedConfig::RgbwOrder _rgbwOrder = LedConfig::RgbwOrder::GRBW;
 
     struct {
         const spi_host_device_t SELECTED_SPI_HOST = SPI2_HOST;
@@ -188,6 +189,7 @@ struct multi_esp32_led_strip_bridge : public led_bridge, InternalBuffer<DOUBLEBU
 
         _totalLedsNumber = cfgLedNumLeds;
         _ledsType = cfgLedType;
+        _rgbwOrder = Config::cfg.led.rgbwOrder;
 
         if (_ledsType == LedType::SK6812)
         {
@@ -211,7 +213,7 @@ struct multi_esp32_led_strip_bridge : public led_bridge, InternalBuffer<DOUBLEBU
                         .strip_gpio_num = seg.data,
                         .max_leds = static_cast<uint32_t>(std::max(nextIndex - seg.startIndex, 0)),
                         .led_model = (_ledsType == LedType::SK6812) ? LED_MODEL_SK6812 : LED_MODEL_WS2812,
-                        .color_component_format = (_ledsType == LedType::SK6812) ? LED_STRIP_COLOR_COMPONENT_FMT_GRBW : LED_STRIP_COLOR_COMPONENT_FMT_GRB,
+                        .color_component_format = colorComponentFormat(),
                         .flags = {
                             .invert_out = false,
                         }
@@ -325,6 +327,25 @@ struct multi_esp32_led_strip_bridge : public led_bridge, InternalBuffer<DOUBLEBU
                 releaseDriverResources();
             }
         }        
+    }
+
+    inline led_color_component_format_t colorComponentFormat() const
+    {
+        if (_ledsType != LedType::SK6812) {
+            return LED_STRIP_COLOR_COMPONENT_FMT_GRB;
+        }
+
+        if (_rgbwOrder == LedConfig::RgbwOrder::WGRB) {
+            led_color_component_format_t format = {};
+            format.format.r_pos = 2;
+            format.format.g_pos = 1;
+            format.format.b_pos = 3;
+            format.format.w_pos = 0;
+            format.format.num_components = 4;
+            return format;
+        }
+
+        return LED_STRIP_COLOR_COMPONENT_FMT_GRBW;
     }
 
     inline led_strip_handle_t findHandle(int& index) const {

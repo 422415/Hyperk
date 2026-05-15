@@ -188,6 +188,17 @@ void setupWebServer(AsyncWebServer& server) {
                 cfg.led.type = (LedType)t;
             }
         }
+        if (request->hasParam("rgbwOrder", true)) {
+            uint8_t order = request->getParam("rgbwOrder", true)->value().toInt();
+            if (order != (uint8_t)cfg.led.rgbwOrder)
+            {
+                if (Leds::restartRequired()){
+                    needsRestart = true;
+                }
+
+                cfg.led.rgbwOrder = static_cast<LedConfig::RgbwOrder>(order);
+            }
+        }
         if (request->hasParam("segments", true)) {
             if (cfg.led.deserializeSegments(request->getParam("segments", true)->value()))
             {
@@ -284,6 +295,7 @@ void setupWebServer(AsyncWebServer& server) {
         led["version"]      = APP_VERSION;
         
         led["type"]     = (int)cfg.led.type;
+        led["rgbwOrder"] = (int)cfg.led.rgbwOrder;
 
         JsonArray segArray = led["segments"].to<JsonArray>();
         cfg.led.serializeSegments(segArray);

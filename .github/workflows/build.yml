@@ -24,7 +24,7 @@ jobs:
             boards: "esp32s3"
             cache_extra: ""
           - group: ClassicESP
-            boards: "esp32 esp32s2 esp32-eth01 esp8266"
+            boards: "esp32 esp32-wled-esp32-ota-quinled-rgbw esp32-quinled-dig-uno-v3-wled-ota esp32-quinled-dig-uno-v3-aeplus-wled-ota esp32-quinled-dig-uno-ar-wled-ota esp32-quinled-dig-uno-aeplus-ar-wled-ota esp32s2 esp32-eth01 esp8266"
             cache_extra: ""
           - group: CustomBoards
             boards: "esp32-GLEDOPTO_GL_C_616WL esp32-GLEDOPTO_GL_C_615WL esp32-DOMRAEM_WLE_ADM esp32-IOTORERO_ETHERNET"

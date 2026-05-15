@@ -52,6 +52,7 @@
 #include "udp_receiver.h"
 #include "leds.h"
 #include "manager.h"
+#include "wled_ota_compat.h"
 
 namespace {
     DNSServer dnsServer;
