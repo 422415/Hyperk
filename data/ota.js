@@ -214,3 +214,96 @@ async function startOtaUpdate() {
         if (saveConfigBtn) saveConfigBtn.disabled = false;
     }    
 };
+
+async function startManualOtaUpload() {
+    const fileInput = document.getElementById('manual_ota_file');
+    const uploadBtn = document.getElementById('manual_ota_btn');
+    const statusArea = document.getElementById('ota_status_area');
+    const statusText = document.getElementById('ota_status_text');
+    const progress = document.getElementById('ota_progress');
+    const installBtn = document.getElementById('install_update_btn');
+    const checkBtn = document.getElementById('check_update_btn');
+    const saveConfigBtn = document.querySelector('form[action="/save_config"] button[type="submit"]');
+
+    if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+        statusArea.style.display = 'block';
+        progress.style.display = 'none';
+        installBtn.style.display = 'none';
+        statusText.innerText = "Select a firmware .bin file first.";
+        return;
+    }
+
+    const file = fileInput.files[0];
+    const fileName = file.name || "";
+    const lowerFileName = fileName.toLowerCase();
+    const arch = (cfgBoardArchitecture || "").toLowerCase();
+
+    statusArea.style.display = 'block';
+    statusArea.style.borderColor = "#eab308";
+    progress.style.display = 'none';
+    installBtn.style.display = 'none';
+
+    if (!lowerFileName.startsWith("ota_hyperk_") || !lowerFileName.endsWith(".bin")) {
+        statusText.innerText = "Pick an OTA_Hyperk .bin file, not a factory, bootloader, or partitions file.";
+        return;
+    }
+
+    if (arch && lowerFileName.indexOf(`${arch}.`) < 0) {
+        statusText.innerText = `Wrong firmware for this controller. Expected a file for ${cfgBoardArchitecture}.`;
+        return;
+    }
+
+    const confirmed = await customConfirm(`Upload and flash ${fileName}?`);
+    if (!confirmed) return;
+
+    isUpdating = true;
+
+    if (saveConfigBtn) saveConfigBtn.disabled = true;
+    if (checkBtn) checkBtn.disabled = true;
+    if (uploadBtn) uploadBtn.disabled = true;
+
+    progress.style.display = 'block';
+    progress.value = 0;
+    statusText.innerText = "Uploading to device... DO NOT REBOOT.";
+
+    const formData = new FormData();
+    formData.append("update", file, "firmware.bin");
+
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", "/ota", true);
+    xhr.setRequestHeader("hyperk-ota-firmware-size", file.size);
+    xhr.setRequestHeader("hyperk-ota-firmware-name", fileName);
+
+    xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) {
+            const percent = Math.round((e.loaded / e.total) * 100);
+            progress.value = percent;
+            statusText.innerText = `Flashing: ${percent}%`;
+        }
+    };
+
+    xhr.onload = () => {
+        isUpdating = false;
+        if (xhr.status === 200) {
+            statusText.innerText = "Update successful! Rebooting...";
+            showToast(true);
+        } else {
+            statusText.innerText = `Flash failed: ${xhr.responseText || xhr.statusText}`;
+            progress.style.display = 'none';
+        }
+        if (checkBtn) checkBtn.disabled = false;
+        if (uploadBtn) uploadBtn.disabled = false;
+        if (saveConfigBtn) saveConfigBtn.disabled = false;
+    };
+
+    xhr.onerror = () => {
+        isUpdating = false;
+        statusText.innerText = "Network error during upload. Device might have rebooted unexpectedly.";
+        progress.style.display = 'none';
+        if (checkBtn) checkBtn.disabled = false;
+        if (uploadBtn) uploadBtn.disabled = false;
+        if (saveConfigBtn) saveConfigBtn.disabled = false;
+    };
+
+    xhr.send(formData);
+}

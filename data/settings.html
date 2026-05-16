@@ -224,6 +224,21 @@
             </button>
           </div>
 
+          <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--pico-form-element-border-color);">
+            <label for="manual_ota_file" style="margin-bottom: 0.5rem; display: block;">Manual firmware upload</label>
+            <div style="display: flex; gap: 0.5rem; align-items: stretch;">
+              <input type="file" id="manual_ota_file" accept=".bin" style="margin-bottom: 0; flex: 1;">
+              <button type="button" id="manual_ota_btn" class="secondary outline"
+                      style="margin-bottom: 0; white-space: nowrap; width: auto;"
+                      onclick="startManualOtaUpload()">
+                Upload
+              </button>
+            </div>
+            <small style="display:block; margin-top:0.5rem; color: var(--pico-muted-color);">
+              Use the OTA_Hyperk .bin file that matches this controller build.
+            </small>
+          </div>
+
           <div class="ota-footer">
             <a href="https://awawa-dev.github.io/hyperk/privacy.html" target="_blank">Privacy Policy</a>
           </div>
