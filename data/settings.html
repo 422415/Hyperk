@@ -63,6 +63,28 @@
             <select name="rgbwOrder">
               <option value="0">GRBW - SK6812 default</option>
               <option value="1">WGRB - QuinLED Dig-COB-RGBW / WS2814</option>
+              <option value="2">RGBW</option>
+              <option value="3">RBGW</option>
+              <option value="4">GBRW</option>
+              <option value="5">BRGW</option>
+              <option value="6">BGRW</option>
+              <option value="7">RGWB</option>
+              <option value="8">RBWG</option>
+              <option value="9">GRWB</option>
+              <option value="10">GBWR</option>
+              <option value="11">BRWG</option>
+              <option value="12">BGWR</option>
+              <option value="13">RWGB</option>
+              <option value="14">RWBG</option>
+              <option value="15">GWRB</option>
+              <option value="16">GWBR</option>
+              <option value="17">BWRG</option>
+              <option value="18">BWGR</option>
+              <option value="19">WRGB</option>
+              <option value="20">WRBG</option>
+              <option value="21">WGBR</option>
+              <option value="22">WBRG</option>
+              <option value="23">WBGR</option>
             </select>
           </label>
 
@@ -95,6 +117,35 @@
               <label>White <input type="number" name="calGain" min="0" max="255" value="255"></label>
               <button type="button" id="cal-cold">Set Cold</button>
               <button type="button" id="cal-neutral">Set Neutral</button>
+            </div>
+          </div>
+
+          <div id="outputCorrection" style="display: none;">
+            <hr class="section-divider">
+            <h5>Output correction</h5>
+            <label>
+              <input type="checkbox" name="rgbToWhiteConversion" role="switch" checked>
+              Convert RGB input to white channel
+            </label>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1rem;">
+              <label>Red gain <input type="number" name="outputRed" min="0" max="255" value="255"></label>
+              <label>Green gain <input type="number" name="outputGreen" min="0" max="255" value="255"></label>
+              <label>Blue gain <input type="number" name="outputBlue" min="0" max="255" value="255"></label>
+              <label>White gain <input type="number" name="outputWhite" min="0" max="255" value="255"></label>
+            </div>
+            <h5>Raw channel test</h5>
+            <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.5rem;">
+              <button type="button" data-raw-test data-r="128" data-g="0" data-b="0" data-w="0">R</button>
+              <button type="button" data-raw-test data-r="0" data-g="128" data-b="0" data-w="0">G</button>
+              <button type="button" data-raw-test data-r="0" data-g="0" data-b="128" data-w="0">B</button>
+              <button type="button" data-raw-test data-r="0" data-g="0" data-b="0" data-w="128">W</button>
+              <button type="button" data-raw-test data-r="128" data-g="128" data-b="0" data-w="0">Y</button>
+              <button type="button" data-raw-test data-r="0" data-g="128" data-b="128" data-w="0">C</button>
+              <button type="button" data-raw-test data-r="128" data-g="0" data-b="128" data-w="0">M</button>
+              <button type="button" data-raw-test data-r="128" data-g="128" data-b="128" data-w="0">RGB</button>
+              <button type="button" data-raw-test data-r="128" data-g="80" data-b="32" data-w="0">Skin</button>
+              <button type="button" data-raw-test data-r="128" data-g="40" data-b="0" data-w="0">Orange</button>
+              <button type="button" data-raw-test data-r="0" data-g="0" data-b="0" data-w="0">Off</button>
             </div>
           </div>
         </div>
@@ -300,7 +351,7 @@
                   fwInfo.innerHTML = `<strong>${cfgDeviceVersion || 'unknown'}</strong> <small style="opacity:0.75">(${cfgDeviceArchitecture || '—'})</small>`;
               }
 
-              const fields = ['type', 'rgbwOrder', 'numLeds', 'relay-gpio', 'relay-inverted', 'brightness', 'r', 'g', 'b', 'effect', 'deviceName', 'extraMdnsTag', 'calGain', 'calRed', 'calGreen', 'calBlue'];
+              const fields = ['type', 'rgbwOrder', 'numLeds', 'relay-gpio', 'relay-inverted', 'brightness', 'r', 'g', 'b', 'effect', 'deviceName', 'extraMdnsTag', 'calGain', 'calRed', 'calGreen', 'calBlue', 'outputRed', 'outputGreen', 'outputBlue', 'outputWhite', 'rgbToWhiteConversion'];
               fields.forEach(field => {
                   const el = document.querySelector(`[name="${field}"]`);
                   if (el && l[field] !== undefined){       

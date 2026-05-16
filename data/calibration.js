@@ -13,11 +13,15 @@ function toggleCalibration() {
     const ledTypeSelect = document.getElementById('ledType');
     const calSection = document.getElementById('whiteCalibration');
     const rgbwOrderControl = document.getElementById('rgbwOrderControl');
+    const outputCorrection = document.getElementById('outputCorrection');
     const isRgbw = ledTypeSelect.value === "1";
     
     calSection.style.display = isRgbw ? "block" : "none";
     if (rgbwOrderControl) {
         rgbwOrderControl.style.display = isRgbw ? "block" : "none";
+    }
+    if (outputCorrection) {
+        outputCorrection.style.display = isRgbw ? "block" : "none";
     }
 }
 
@@ -33,5 +37,25 @@ function setupCalibration(){
         setCalibration(255, 176, 176, 112);
     });    
     
+    document.querySelectorAll('[data-raw-test]').forEach((button) => {
+        button.addEventListener('click', async () => {
+            const body = new URLSearchParams({
+                r: button.dataset.r || '0',
+                g: button.dataset.g || '0',
+                b: button.dataset.b || '0',
+                w: button.dataset.w || '0'
+            });
+
+            button.setAttribute('aria-busy', 'true');
+            try {
+                await fetch('/api/test_color', { method: 'POST', body });
+            }
+            catch (e) {
+                console.error('Raw channel test failed:', e);
+            }
+            button.setAttribute('aria-busy', 'false');
+        });
+    });
+
     toggleCalibration();
 };

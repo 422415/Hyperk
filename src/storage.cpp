@@ -80,6 +80,12 @@ namespace Storage {
         cfg.led.b          = doc["led"]["b"] | 8;
         cfg.led.effect     = doc["led"]["effect"] | 0;
 
+        cfg.led.output.red        = doc["output"]["red"]        | cfg.led.output.red;
+        cfg.led.output.green      = doc["output"]["green"]      | cfg.led.output.green;
+        cfg.led.output.blue       = doc["output"]["blue"]       | cfg.led.output.blue;
+        cfg.led.output.white      = doc["output"]["white"]      | cfg.led.output.white;
+        cfg.led.output.rgbToWhite = doc["output"]["rgbToWhite"] | cfg.led.output.rgbToWhite;
+
         cfg.led.calibration.gain  = doc["calibration"]["gain"]  | 0xFF;
         cfg.led.calibration.red   = doc["calibration"]["red"]   | 0xA0;
         cfg.led.calibration.green = doc["calibration"]["green"] | 0xA0;
@@ -112,6 +118,12 @@ namespace Storage {
         doc["led"]["g"]          = cfg.led.g;
         doc["led"]["b"]          = cfg.led.b;
         doc["led"]["effect"]     = cfg.led.effect;
+
+        doc["output"]["red"]        = cfg.led.output.red;
+        doc["output"]["green"]      = cfg.led.output.green;
+        doc["output"]["blue"]       = cfg.led.output.blue;
+        doc["output"]["white"]      = cfg.led.output.white;
+        doc["output"]["rgbToWhite"] = cfg.led.output.rgbToWhite;
 
         doc["calibration"]["gain"]  = cfg.led.calibration.gain;
         doc["calibration"]["red"]   = cfg.led.calibration.red;

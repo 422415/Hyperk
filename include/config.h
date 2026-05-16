@@ -37,6 +37,26 @@
     #define HYPERK_DEFAULT_LED_COUNT 16
 #endif
 
+#ifndef HYPERK_DEFAULT_OUTPUT_RED_GAIN
+    #define HYPERK_DEFAULT_OUTPUT_RED_GAIN 255
+#endif
+
+#ifndef HYPERK_DEFAULT_OUTPUT_GREEN_GAIN
+    #define HYPERK_DEFAULT_OUTPUT_GREEN_GAIN 255
+#endif
+
+#ifndef HYPERK_DEFAULT_OUTPUT_BLUE_GAIN
+    #define HYPERK_DEFAULT_OUTPUT_BLUE_GAIN 255
+#endif
+
+#ifndef HYPERK_DEFAULT_OUTPUT_WHITE_GAIN
+    #define HYPERK_DEFAULT_OUTPUT_WHITE_GAIN 255
+#endif
+
+#ifndef HYPERK_DEFAULT_RGB_TO_WHITE_CONVERSION
+    #define HYPERK_DEFAULT_RGB_TO_WHITE_CONVERSION 1
+#endif
+
 enum class LedType : uint8_t {
     WS2812 = 0,
     SK6812 = 1,
@@ -46,7 +66,29 @@ enum class LedType : uint8_t {
 struct LedConfig {
     enum class RgbwOrder : uint8_t {
         GRBW = 0,
-        WGRB = 1
+        WGRB = 1,
+        RGBW = 2,
+        RBGW = 3,
+        GBRW = 4,
+        BRGW = 5,
+        BGRW = 6,
+        RGWB = 7,
+        RBWG = 8,
+        GRWB = 9,
+        GBWR = 10,
+        BRWG = 11,
+        BGWR = 12,
+        RWGB = 13,
+        RWBG = 14,
+        GWRB = 15,
+        GWBR = 16,
+        BWRG = 17,
+        BWGR = 18,
+        WRGB = 19,
+        WRBG = 20,
+        WGBR = 21,
+        WBRG = 22,
+        WBGR = 23
     };
 
     struct Segment {
@@ -68,6 +110,14 @@ struct LedConfig {
         bool inverted;
     };
 
+    struct OutputCorrection {
+        uint8_t red   = HYPERK_DEFAULT_OUTPUT_RED_GAIN;
+        uint8_t green = HYPERK_DEFAULT_OUTPUT_GREEN_GAIN;
+        uint8_t blue  = HYPERK_DEFAULT_OUTPUT_BLUE_GAIN;
+        uint8_t white = HYPERK_DEFAULT_OUTPUT_WHITE_GAIN;
+        bool rgbToWhite = HYPERK_DEFAULT_RGB_TO_WHITE_CONVERSION != 0;
+    };
+
     LedType  type       = static_cast<LedType>(HYPERK_DEFAULT_LED_TYPE);
     RgbwOrder rgbwOrder = static_cast<RgbwOrder>(HYPERK_DEFAULT_RGBW_ORDER);
     std::vector<Segment> segments = {{HYPERK_DEFAULT_LED_DATA_GPIO, HYPERK_DEFAULT_LED_CLOCK_GPIO, 0}};
@@ -75,6 +125,7 @@ struct LedConfig {
     uint16_t numLeds    = HYPERK_DEFAULT_LED_COUNT;
     uint8_t  brightness = 255;
     uint8_t  r = 196, g = 32, b = 8;
+    OutputCorrection output;
     uint8_t  effect     = 0;
 
     struct Calibration {

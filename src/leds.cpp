@@ -187,6 +187,11 @@ namespace Leds{
         Volatile::updateStaticColor(cfg.led.r, cfg.led.g, cfg.led.b);
     }
 
+    inline uint8_t scaleGain(uint8_t v, uint8_t gain)
+    {
+        return (static_cast<uint16_t>(v) * gain + 127) / 255;
+    }
+
     inline uint8_t scaleBri(uint8_t v)
     {
         return (static_cast<uint16_t>(v) * briPlus) >> 8;
@@ -199,6 +204,25 @@ namespace Leds{
             r = scaleBri(r);
             g = scaleBri(g);
             b = scaleBri(b);
+        }
+
+        const auto& ledCfg = Config::cfg.led;
+        r = scaleGain(r, ledCfg.output.red);
+        g = scaleGain(g, ledCfg.output.green);
+        b = scaleGain(b, ledCfg.output.blue);
+
+        if (ledCfg.type == LedType::SK6812)
+        {
+            if (ledCfg.output.rgbToWhite)
+            {
+                const ColorRgbw converted = rgb2rgbw(r, g, b);
+                renderer.setLedRgbw(index, converted.R, converted.G, converted.B, scaleGain(converted.W, ledCfg.output.white));
+            }
+            else
+            {
+                renderer.setLedRgbw(index, r, g, b, 0);
+            }
+            return;
         }
 
         renderer.setLedRgb(index, r, g, b);
@@ -214,7 +238,25 @@ namespace Leds{
             w = scaleBri(w);
         }
 
+        const auto& output = Config::cfg.led.output;
+        r = scaleGain(r, output.red);
+        g = scaleGain(g, output.green);
+        b = scaleGain(b, output.blue);
+        w = scaleGain(w, output.white);
+
         renderer.setLedRgbw(index, r, g, b, w);
+    }
+
+    void testRawColor(uint8_t r, uint8_t g, uint8_t b, uint8_t w)
+    {
+        tryWaitForRenderer();
+        Volatile::setRelay(r || g || b || w);
+
+        for(int i = 0; i < getLedsNumber(); i++) {
+            renderer.setLedRgbw(i, r, g, b, w);
+        }
+
+        renderLed(true);
     }
 
     void checkDelayedRender()

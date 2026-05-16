@@ -335,17 +335,45 @@ struct multi_esp32_led_strip_bridge : public led_bridge, InternalBuffer<DOUBLEBU
             return LED_STRIP_COLOR_COMPONENT_FMT_GRB;
         }
 
-        if (_rgbwOrder == LedConfig::RgbwOrder::WGRB) {
-            led_color_component_format_t format = {};
-            format.format.r_pos = 2;
-            format.format.g_pos = 1;
-            format.format.b_pos = 3;
-            format.format.w_pos = 0;
-            format.format.num_components = 4;
-            return format;
+        switch (_rgbwOrder) {
+            case LedConfig::RgbwOrder::RGBW: return makeRgbwFormat(0, 1, 2, 3);
+            case LedConfig::RgbwOrder::RBGW: return makeRgbwFormat(0, 2, 1, 3);
+            case LedConfig::RgbwOrder::GRBW: return makeRgbwFormat(1, 0, 2, 3);
+            case LedConfig::RgbwOrder::GBRW: return makeRgbwFormat(2, 0, 1, 3);
+            case LedConfig::RgbwOrder::BRGW: return makeRgbwFormat(1, 2, 0, 3);
+            case LedConfig::RgbwOrder::BGRW: return makeRgbwFormat(2, 1, 0, 3);
+            case LedConfig::RgbwOrder::RGWB: return makeRgbwFormat(0, 1, 3, 2);
+            case LedConfig::RgbwOrder::RBWG: return makeRgbwFormat(0, 3, 1, 2);
+            case LedConfig::RgbwOrder::GRWB: return makeRgbwFormat(1, 0, 3, 2);
+            case LedConfig::RgbwOrder::GBWR: return makeRgbwFormat(3, 0, 1, 2);
+            case LedConfig::RgbwOrder::BRWG: return makeRgbwFormat(1, 3, 0, 2);
+            case LedConfig::RgbwOrder::BGWR: return makeRgbwFormat(3, 1, 0, 2);
+            case LedConfig::RgbwOrder::RWGB: return makeRgbwFormat(0, 2, 3, 1);
+            case LedConfig::RgbwOrder::RWBG: return makeRgbwFormat(0, 3, 2, 1);
+            case LedConfig::RgbwOrder::GWRB: return makeRgbwFormat(2, 0, 3, 1);
+            case LedConfig::RgbwOrder::GWBR: return makeRgbwFormat(3, 0, 2, 1);
+            case LedConfig::RgbwOrder::BWRG: return makeRgbwFormat(2, 3, 0, 1);
+            case LedConfig::RgbwOrder::BWGR: return makeRgbwFormat(3, 2, 0, 1);
+            case LedConfig::RgbwOrder::WRGB: return makeRgbwFormat(1, 2, 3, 0);
+            case LedConfig::RgbwOrder::WRBG: return makeRgbwFormat(1, 3, 2, 0);
+            case LedConfig::RgbwOrder::WGRB: return makeRgbwFormat(2, 1, 3, 0);
+            case LedConfig::RgbwOrder::WGBR: return makeRgbwFormat(3, 1, 2, 0);
+            case LedConfig::RgbwOrder::WBRG: return makeRgbwFormat(2, 3, 1, 0);
+            case LedConfig::RgbwOrder::WBGR: return makeRgbwFormat(3, 2, 1, 0);
         }
 
-        return LED_STRIP_COLOR_COMPONENT_FMT_GRBW;
+        return makeRgbwFormat(1, 0, 2, 3);
+    }
+
+    inline led_color_component_format_t makeRgbwFormat(uint8_t rPos, uint8_t gPos, uint8_t bPos, uint8_t wPos) const
+    {
+        led_color_component_format_t format = {};
+        format.format.r_pos = rPos;
+        format.format.g_pos = gPos;
+        format.format.b_pos = bPos;
+        format.format.w_pos = wPos;
+        format.format.num_components = 4;
+        return format;
     }
 
     inline led_strip_handle_t findHandle(int& index) const {

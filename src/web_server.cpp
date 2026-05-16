@@ -242,6 +242,12 @@ void setupWebServer(AsyncWebServer& server) {
         if (request->hasParam("calGreen", true)) cfg.led.calibration.green = constrain(request->getParam("calGreen", true)->value().toInt(), 0, 255);
         if (request->hasParam("calBlue", true)) cfg.led.calibration.blue = constrain(request->getParam("calBlue", true)->value().toInt(), 0, 255);
 
+        if (request->hasParam("outputRed", true)) cfg.led.output.red = constrain(request->getParam("outputRed", true)->value().toInt(), 0, 255);
+        if (request->hasParam("outputGreen", true)) cfg.led.output.green = constrain(request->getParam("outputGreen", true)->value().toInt(), 0, 255);
+        if (request->hasParam("outputBlue", true)) cfg.led.output.blue = constrain(request->getParam("outputBlue", true)->value().toInt(), 0, 255);
+        if (request->hasParam("outputWhite", true)) cfg.led.output.white = constrain(request->getParam("outputWhite", true)->value().toInt(), 0, 255);
+        cfg.led.output.rgbToWhite = request->hasParam("rgbToWhiteConversion", true);
+
         const bool standaloneApMode = isAPMode();
 
         if (request->hasParam("deviceName", true)) {
@@ -283,6 +289,29 @@ void setupWebServer(AsyncWebServer& server) {
         }
     });
 
+    // Raw RGBW channel test
+    server.on("/api/test_color", HTTP_POST, [](AsyncWebServerRequest *request) {
+        auto readChannel = [request](const char* name) -> uint8_t {
+            if (!request->hasParam(name, true)) {
+                return 0;
+            }
+            return constrain(request->getParam(name, true)->value().toInt(), 0, 255);
+        };
+
+        const uint8_t r = readChannel("r");
+        const uint8_t g = readChannel("g");
+        const uint8_t b = readChannel("b");
+        const uint8_t w = readChannel("w");
+
+        if (Config::cfg.led.type != LedType::SK6812 && w > 0) {
+            request->send(400, mime_application_json, "{\"status\":\"unsupported\"}");
+            return;
+        }
+
+        Leds::testRawColor(r, g, b, w);
+        request->send(200, mime_application_json, "{\"status\":\"ok\"}");
+    });
+
     // Current config
     server.on("/api/get_current_config", HTTP_GET, [](AsyncWebServerRequest *request) {        
         AsyncResponseStream *response = request->beginResponseStream(mime_application_json);                
@@ -309,6 +338,12 @@ void setupWebServer(AsyncWebServer& server) {
         led["calRed"]   = cfg.led.calibration.red;
         led["calGreen"] = cfg.led.calibration.green;
         led["calBlue"]  = cfg.led.calibration.blue;
+
+        led["outputRed"]    = cfg.led.output.red;
+        led["outputGreen"]  = cfg.led.output.green;
+        led["outputBlue"]   = cfg.led.output.blue;
+        led["outputWhite"]  = cfg.led.output.white;
+        led["rgbToWhiteConversion"] = cfg.led.output.rgbToWhite;
 
 
         led["brightness"] = cfg.led.brightness;
