@@ -127,6 +127,15 @@ void setup() {
 
     // WiFi connection with fallback
     if (!hasEthernet){
+        #if defined(ARDUINO_ARCH_ESP32)
+            WiFi.persistent(false);
+            WiFi.setSleep(false);
+            WiFi.setAutoReconnect(true);
+            if (cfg.deviceName.length() > 0) {
+                WiFi.setHostname(cfg.deviceName.c_str());
+            }
+        #endif
+
         if (cfg.wifi.ssid.length() > 0)
         {
             WiFi.begin(cfg.wifi.ssid.c_str(), cfg.wifi.password.c_str());
