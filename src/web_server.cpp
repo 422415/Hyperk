@@ -57,6 +57,7 @@ namespace {
 void setupStaticHandlers(AsyncWebServer& server);
 
 void setupWebServer(AsyncWebServer& server) {
+    otaUpdateHandler(server);
     
     if (isAPMode()){
         server.on("/fwlink", HTTP_GET, [](AsyncWebServerRequest *request){ request->redirect("/"); });
@@ -64,7 +65,6 @@ void setupWebServer(AsyncWebServer& server) {
         server.on("/generate_204", HTTP_ANY, [](AsyncWebServerRequest *request){ request->redirect("/"); });
     } else {
         setupUniApiJsonHandler(server);
-        otaUpdateHandler(server);
     }
 
     // Scan WiFi
@@ -146,7 +146,7 @@ void setupWebServer(AsyncWebServer& server) {
                 "<p><a href='http://" + cfg.deviceName + ".local' style='color:#43a047;font-weight:bold;'>" + cfg.deviceName + ".local</a></p>"
                 "<p style='font-size:0.9rem; color:#888;'>Alternatively check router for new IP.</p>"
                 "<p style='color:#666;margin-top:40px;font-size:0.85rem;'>"
-                "If connection fails, device will <b>switch back to WiFi AP</b> in 12s.</p>"
+                "If connection fails, device will <b>switch back to WiFi AP</b> after about 35s.</p>"
                 "</body></html>");
 
             response->addHeader(F("Connection"), F("close"));

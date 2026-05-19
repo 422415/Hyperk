@@ -58,6 +58,7 @@ namespace {
     DNSServer dnsServer;
     AsyncWebServer server(80);
     WiFiUDP udpDDP, udpRealTime, udpRAW;
+    constexpr uint32_t WIFI_CONNECT_TIMEOUT_MS = 35000;
 
     bool inAPMode = false;
     bool hasEthernet = false; 
@@ -128,6 +129,7 @@ void setup() {
     // WiFi connection with fallback
     if (!hasEthernet){
         #if defined(ARDUINO_ARCH_ESP32)
+            WiFi.mode(WIFI_STA);
             WiFi.persistent(false);
             WiFi.setSleep(false);
             WiFi.setAutoReconnect(true);
@@ -139,7 +141,7 @@ void setup() {
         if (cfg.wifi.ssid.length() > 0)
         {
             WiFi.begin(cfg.wifi.ssid.c_str(), cfg.wifi.password.c_str());
-            uint32_t timeout = millis() + 12000;
+            uint32_t timeout = millis() + WIFI_CONNECT_TIMEOUT_MS;
             while (WiFi.status() != WL_CONNECTED && millis() < timeout)
             {
                 delay(400);
