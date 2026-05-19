@@ -27,6 +27,16 @@ function closeConfirm(result) {
     resolveConfirm(result);
 }
 
+function normalizeOtaFirmwareName(fileName) {
+    return (fileName || "").replace(/\s+\(\d+\)(?=\.bin$)/i, "");
+}
+
+function firmwareNameMatchesBoard(fileName, boardName) {
+    const lowerFileName = normalizeOtaFirmwareName(fileName).toLowerCase();
+    const arch = (boardName || "").toLowerCase();
+    return !arch || lowerFileName.indexOf(`${arch}.`) >= 0;
+}
+
 async function checkFirmwareUpdates() {
     const statusArea = document.getElementById('ota_status_area');
     const statusText = document.getElementById('ota_status_text');
@@ -235,8 +245,8 @@ async function startManualOtaUpload() {
 
     const file = fileInput.files[0];
     const fileName = file.name || "";
-    const lowerFileName = fileName.toLowerCase();
-    const arch = (cfgBoardArchitecture || "").toLowerCase();
+    const otaFirmwareName = normalizeOtaFirmwareName(fileName);
+    const lowerFileName = otaFirmwareName.toLowerCase();
 
     statusArea.style.display = 'block';
     statusArea.style.borderColor = "#eab308";
@@ -248,7 +258,7 @@ async function startManualOtaUpload() {
         return;
     }
 
-    if (arch && lowerFileName.indexOf(`${arch}.`) < 0) {
+    if (!firmwareNameMatchesBoard(fileName, cfgBoardArchitecture)) {
         statusText.innerText = `Wrong firmware for this controller. Expected a file for ${cfgBoardArchitecture}.`;
         return;
     }
@@ -272,7 +282,7 @@ async function startManualOtaUpload() {
     const xhr = new XMLHttpRequest();
     xhr.open("POST", "/ota", true);
     xhr.setRequestHeader("hyperk-ota-firmware-size", file.size);
-    xhr.setRequestHeader("hyperk-ota-firmware-name", fileName);
+    xhr.setRequestHeader("hyperk-ota-firmware-name", otaFirmwareName);
 
     xhr.upload.onprogress = (e) => {
         if (e.lengthComputable) {

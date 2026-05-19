@@ -40,6 +40,23 @@
 
 namespace {
     bool customValidationFailed = false;
+
+    bool firmwareNameMatchesCurrentBuild(const String& firmwareName) {
+        String expectedPlatform = String(PIO_ENV_NAME);
+        expectedPlatform.toLowerCase();
+        const int matchIndex = firmwareName.indexOf(expectedPlatform);
+        if (matchIndex < 0) {
+            return false;
+        }
+
+        const int suffixIndex = matchIndex + expectedPlatform.length();
+        if (suffixIndex >= firmwareName.length()) {
+            return false;
+        }
+
+        const char suffix = firmwareName.charAt(suffixIndex);
+        return suffix == '.' || suffix == ' ' || suffix == '(';
+    }
 }
 
 void otaUpdateHandler(AsyncWebServer &server) {
@@ -62,9 +79,8 @@ void otaUpdateHandler(AsyncWebServer &server) {
             if (request->hasHeader("hyperk-ota-firmware-name")) {
                 String firmwareName = request->getHeader("hyperk-ota-firmware-name")->value();
                 firmwareName.toLowerCase();
-                String expectedPlatform = String(PIO_ENV_NAME) + ".";
-                Log::debug("OTA firmware name: ", firmwareName, ", searching for: ", expectedPlatform, " tag");
-                if (firmwareName.indexOf(expectedPlatform) < 0)  {
+                Log::debug("OTA firmware name: ", firmwareName, ", searching for: ", PIO_ENV_NAME, " tag");
+                if (!firmwareNameMatchesCurrentBuild(firmwareName))  {
                     #ifdef ARDUINO_ARCH_ESP32
                         Update.abort();
                     #endif
