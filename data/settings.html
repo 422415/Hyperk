@@ -122,12 +122,8 @@
 
           <div id="outputCorrection" style="display: none;">
             <hr class="section-divider">
-            <h5>Color tuning</h5>
-            <div class="tuning-actions">
-              <button type="button" class="secondary" data-tuning-preset="anime">Anime</button>
-              <button type="button" class="secondary" data-tuning-preset="neutral">Neutral</button>
-              <button type="button" class="secondary" data-tuning-preset="reset">Reset</button>
-            </div>
+            <h5>Tune real LED channels</h5>
+            <p class="tuning-note">Only red, green, blue, and white are adjustable outputs. Mixed colors are checks, not separate controls.</p>
             <div class="tuning-grid">
               <label>Red strength
                 <input type="range" min="0" max="255" value="255" data-tuning-range="outputRed">
@@ -170,13 +166,15 @@
               <button type="button" data-corrected-test data-r="160" data-g="0" data-b="0" data-w="0">Red</button>
               <button type="button" data-corrected-test data-r="0" data-g="160" data-b="0" data-w="0">Green</button>
               <button type="button" data-corrected-test data-r="0" data-g="0" data-b="160" data-w="0">Blue</button>
+              <button type="button" data-corrected-test data-r="0" data-g="0" data-b="0" data-w="160">White LED</button>
+              <button type="button" data-corrected-test data-r="0" data-g="0" data-b="0" data-w="0">Off</button>
+            </div>
+            <h5>Verify mixed colors</h5>
+            <div class="test-grid">
               <button type="button" data-corrected-test data-r="160" data-g="160" data-b="0" data-w="0">Yellow</button>
               <button type="button" data-corrected-test data-r="0" data-g="160" data-b="160" data-w="0">Cyan</button>
               <button type="button" data-corrected-test data-r="160" data-g="0" data-b="160" data-w="0">Magenta</button>
-              <button type="button" data-corrected-test data-r="160" data-g="160" data-b="160" data-w="0">White</button>
-              <button type="button" data-corrected-test data-r="160" data-g="100" data-b="40" data-w="0">Skin</button>
-              <button type="button" data-corrected-test data-r="160" data-g="55" data-b="0" data-w="0">Orange</button>
-              <button type="button" data-corrected-test data-r="0" data-g="0" data-b="0" data-w="0">Off</button>
+              <button type="button" data-corrected-test data-r="160" data-g="160" data-b="160" data-w="0">RGB White</button>
             </div>
             <details class="raw-test-panel">
               <summary>Raw channel test</summary>

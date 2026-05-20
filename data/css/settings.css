@@ -164,21 +164,20 @@ details summary[role="button"]:focus {
   border-radius: var(--pico-border-radius);
 }
 
-.tuning-actions,
 .test-grid {
   display: grid;
   gap: 0.5rem;
-}
-
-.tuning-actions {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  margin-bottom: 1rem;
 }
 
 .tuning-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
+}
+
+.tuning-note {
+  margin-bottom: 1rem;
+  color: var(--pico-muted-color);
 }
 
 .tuning-grid input[type="number"] {
@@ -212,7 +211,6 @@ details summary[role="button"]:focus {
 }
 
 @media (max-width: 720px) {
-  .tuning-actions,
   .tuning-grid {
     grid-template-columns: 1fr;
   }

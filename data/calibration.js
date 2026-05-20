@@ -116,37 +116,6 @@ function setupTuningControls() {
         });
     });
 
-    const presets = {
-        anime: { outputRed: 255, outputGreen: 185, outputBlue: 120, outputWhite: 0, outputBlueToGreen: 35, outputBlueToRed: 0, rgbToWhite: false },
-        neutral: { outputRed: 255, outputGreen: 215, outputBlue: 150, outputWhite: 0, outputBlueToGreen: 20, outputBlueToRed: 0, rgbToWhite: false },
-        reset: { outputRed: 255, outputGreen: 255, outputBlue: 255, outputWhite: 255, outputBlueToGreen: 0, outputBlueToRed: 0, rgbToWhite: false }
-    };
-
-    document.querySelectorAll('[data-tuning-preset]').forEach((button) => {
-        button.addEventListener('click', () => {
-            const preset = presets[button.dataset.tuningPreset];
-            if (!preset) return;
-
-            setTuningValue('outputRed', preset.outputRed);
-            setTuningValue('outputGreen', preset.outputGreen);
-            setTuningValue('outputBlue', preset.outputBlue);
-            setTuningValue('outputWhite', preset.outputWhite);
-            setTuningValue('outputRedToGreen', 0);
-            setTuningValue('outputRedToBlue', 0);
-            setTuningValue('outputGreenToRed', 0);
-            setTuningValue('outputGreenToBlue', 0);
-            setTuningValue('outputBlueToRed', preset.outputBlueToRed);
-            setTuningValue('outputBlueToGreen', preset.outputBlueToGreen);
-            const mixer = document.querySelector('[name="rgbToWhiteConversion"]');
-            if (mixer) mixer.checked = preset.rgbToWhite;
-
-            if (!activePreviewButton) {
-                activePreviewButton = document.querySelector('[data-corrected-test][data-r="160"][data-g="160"][data-b="160"]');
-                activePreviewButton?.classList.add('active-preview');
-            }
-            scheduleCorrectedPreview();
-        });
-    });
 }
 
 function setupCalibration(){
