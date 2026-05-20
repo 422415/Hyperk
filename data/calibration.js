@@ -94,10 +94,33 @@ function scheduleCorrectedPreview() {
     previewTimer = setTimeout(() => sendCorrectedPreview(activePreviewButton), 90);
 }
 
+function selectChannelTab(channel, shouldPreview) {
+    document.querySelectorAll('[data-channel-tab]').forEach((button) => {
+        const isActive = button.dataset.channelTab === channel;
+        button.classList.toggle('active-channel-tab', isActive);
+        button.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    });
+
+    document.querySelectorAll('[data-channel-panel]').forEach((panel) => {
+        panel.hidden = panel.dataset.channelPanel !== channel;
+    });
+
+    if (shouldPreview) {
+        document.querySelector(`[data-preview-channel="${channel}"]`)?.click();
+    }
+}
+
 function setupTuningControls() {
+    const initializedNames = new Set();
+
     document.querySelectorAll('[data-tuning-range], [data-tuning-number]').forEach((control) => {
         const name = control.dataset.tuningRange || control.dataset.tuningNumber;
-        setTuningValue(name, control.value);
+
+        if (!initializedNames.has(name)) {
+            initializedNames.add(name);
+            const currentValue = document.querySelector(`[data-tuning-number="${name}"]`)?.value ?? control.value;
+            setTuningValue(name, currentValue);
+        }
 
         control.addEventListener('input', () => {
             setTuningValue(name, control.value);
@@ -116,6 +139,12 @@ function setupTuningControls() {
         });
     });
 
+    document.querySelectorAll('[data-channel-tab]').forEach((button) => {
+        button.addEventListener('click', () => selectChannelTab(button.dataset.channelTab, true));
+    });
+
+    const initialTab = document.querySelector('[data-channel-tab].active-channel-tab')?.dataset.channelTab || 'red';
+    selectChannelTab(initialTab, false);
 }
 
 function setupCalibration(){

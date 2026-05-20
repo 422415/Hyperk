@@ -164,6 +164,24 @@ details summary[role="button"]:focus {
   border-radius: var(--pico-border-radius);
 }
 
+.calibration-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  align-items: end;
+}
+
+.calibration-grid label,
+.calibration-grid input,
+.calibration-grid button {
+  margin-bottom: 0;
+}
+
+.calibration-grid button {
+  min-height: 2.45rem;
+  padding: 0.45rem 0.75rem;
+}
+
 .test-grid {
   display: grid;
   gap: 0.5rem;
@@ -178,6 +196,35 @@ details summary[role="button"]:focus {
 .tuning-note {
   margin-bottom: 1rem;
   color: var(--pico-muted-color);
+}
+
+.channel-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.channel-tabs button {
+  margin-bottom: 0;
+  padding-inline: 0.75rem;
+}
+
+.channel-tabs button.active-channel-tab {
+  outline: 2px solid #eab308;
+  outline-offset: 2px;
+}
+
+.channel-panel {
+  margin-bottom: 1rem;
+}
+
+.channel-panel[hidden] {
+  display: none;
+}
+
+.channel-panel h6 {
+  margin-bottom: 0.75rem;
 }
 
 .tuning-grid input[type="number"] {
@@ -211,6 +258,14 @@ details summary[role="button"]:focus {
 }
 
 @media (max-width: 720px) {
+  .calibration-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .channel-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .tuning-grid {
     grid-template-columns: 1fr;
   }

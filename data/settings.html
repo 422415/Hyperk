@@ -110,7 +110,7 @@
           <div id="whiteCalibration" style="display: none;">
             <hr class="section-divider">
             <h5>White channel calibration</h5>
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">            
+            <div class="calibration-grid">
               <label>R <input type="number" name="calRed" min="0" max="255" value="160"></label>
               <label>G <input type="number" name="calGreen" min="0" max="255" value="160"></label>
               <label>B <input type="number" name="calBlue" min="0" max="255" value="160"></label>
@@ -123,50 +123,83 @@
           <div id="outputCorrection" style="display: none;">
             <hr class="section-divider">
             <h5>Tune real LED channels</h5>
-            <p class="tuning-note">Only red, green, blue, and white are adjustable outputs. Mixed colors are checks, not separate controls.</p>
-            <div class="tuning-grid">
-              <label>Red strength
-                <input type="range" min="0" max="255" value="255" data-tuning-range="outputRed">
-                <input type="number" name="outputRed" min="0" max="255" value="255" data-tuning-number="outputRed">
-              </label>
-              <label>Green strength
-                <input type="range" min="0" max="255" value="255" data-tuning-range="outputGreen">
-                <input type="number" name="outputGreen" min="0" max="255" value="255" data-tuning-number="outputGreen">
-              </label>
-              <label>Blue strength
-                <input type="range" min="0" max="255" value="255" data-tuning-range="outputBlue">
-                <input type="number" name="outputBlue" min="0" max="255" value="255" data-tuning-number="outputBlue">
-              </label>
-              <label>White
-                <input type="range" min="0" max="255" value="255" data-tuning-range="outputWhite">
-                <input type="number" name="outputWhite" min="0" max="255" value="255" data-tuning-number="outputWhite">
-              </label>
+            <p class="tuning-note">Tune the physical red, green, blue, and white LEDs only. Mixed colors are verification checks made from those real channels.</p>
+            <div class="channel-tabs" role="tablist" aria-label="Output channel tuning">
+              <button type="button" class="active-channel-tab" data-channel-tab="red">Red</button>
+              <button type="button" data-channel-tab="green">Green</button>
+              <button type="button" data-channel-tab="blue">Blue</button>
+              <button type="button" data-channel-tab="white">White</button>
             </div>
-            <h5>Blue repair</h5>
-            <div class="tuning-grid">
-              <label>Add green to blue
-                <input type="range" min="0" max="255" value="0" data-tuning-range="outputBlueToGreen">
-                <input type="number" name="outputBlueToGreen" min="0" max="255" value="0" data-tuning-number="outputBlueToGreen">
-              </label>
-              <label>Add red to blue
-                <input type="range" min="0" max="255" value="0" data-tuning-range="outputBlueToRed">
-                <input type="number" name="outputBlueToRed" min="0" max="255" value="0" data-tuning-number="outputBlueToRed">
-              </label>
-            </div>
-            <input type="hidden" name="outputRedToGreen" value="0">
-            <input type="hidden" name="outputRedToBlue" value="0">
-            <input type="hidden" name="outputGreenToRed" value="0">
-            <input type="hidden" name="outputGreenToBlue" value="0">
-            <label class="white-mixer-control">
-              <input type="checkbox" name="rgbToWhiteConversion" role="switch">
-              White mixer
-            </label>
-            <h5>Preview</h5>
+            <section class="channel-panel" data-channel-panel="red">
+              <h6>Red LED</h6>
+              <div class="tuning-grid">
+                <label>Red strength
+                  <input type="range" min="0" max="255" value="255" data-tuning-range="outputRed">
+                  <input type="number" name="outputRed" min="0" max="255" value="255" data-tuning-number="outputRed">
+                </label>
+                <label>Add green to red
+                  <input type="range" min="0" max="255" value="0" data-tuning-range="outputRedToGreen">
+                  <input type="number" name="outputRedToGreen" min="0" max="255" value="0" data-tuning-number="outputRedToGreen">
+                </label>
+                <label>Add blue to red
+                  <input type="range" min="0" max="255" value="0" data-tuning-range="outputRedToBlue">
+                  <input type="number" name="outputRedToBlue" min="0" max="255" value="0" data-tuning-number="outputRedToBlue">
+                </label>
+              </div>
+            </section>
+            <section class="channel-panel" data-channel-panel="green" hidden>
+              <h6>Green LED</h6>
+              <div class="tuning-grid">
+                <label>Green strength
+                  <input type="range" min="0" max="255" value="255" data-tuning-range="outputGreen">
+                  <input type="number" name="outputGreen" min="0" max="255" value="255" data-tuning-number="outputGreen">
+                </label>
+                <label>Add red to green
+                  <input type="range" min="0" max="255" value="0" data-tuning-range="outputGreenToRed">
+                  <input type="number" name="outputGreenToRed" min="0" max="255" value="0" data-tuning-number="outputGreenToRed">
+                </label>
+                <label>Add blue to green
+                  <input type="range" min="0" max="255" value="0" data-tuning-range="outputGreenToBlue">
+                  <input type="number" name="outputGreenToBlue" min="0" max="255" value="0" data-tuning-number="outputGreenToBlue">
+                </label>
+              </div>
+            </section>
+            <section class="channel-panel" data-channel-panel="blue" hidden>
+              <h6>Blue LED</h6>
+              <div class="tuning-grid">
+                <label>Blue strength
+                  <input type="range" min="0" max="255" value="255" data-tuning-range="outputBlue">
+                  <input type="number" name="outputBlue" min="0" max="255" value="255" data-tuning-number="outputBlue">
+                </label>
+                <label>Add red to blue
+                  <input type="range" min="0" max="255" value="0" data-tuning-range="outputBlueToRed">
+                  <input type="number" name="outputBlueToRed" min="0" max="255" value="0" data-tuning-number="outputBlueToRed">
+                </label>
+                <label>Add green to blue
+                  <input type="range" min="0" max="255" value="0" data-tuning-range="outputBlueToGreen">
+                  <input type="number" name="outputBlueToGreen" min="0" max="255" value="0" data-tuning-number="outputBlueToGreen">
+                </label>
+              </div>
+            </section>
+            <section class="channel-panel" data-channel-panel="white" hidden>
+              <h6>White LED</h6>
+              <div class="tuning-grid">
+                <label>White strength
+                  <input type="range" min="0" max="255" value="255" data-tuning-range="outputWhite">
+                  <input type="number" name="outputWhite" min="0" max="255" value="255" data-tuning-number="outputWhite">
+                </label>
+                <label class="white-mixer-control">
+                  <input type="checkbox" name="rgbToWhiteConversion" role="switch">
+                  Convert shared RGB brightness into the white LED
+                </label>
+              </div>
+            </section>
+            <h5>Preview physical channels</h5>
             <div class="test-grid">
-              <button type="button" data-corrected-test data-r="160" data-g="0" data-b="0" data-w="0">Red</button>
-              <button type="button" data-corrected-test data-r="0" data-g="160" data-b="0" data-w="0">Green</button>
-              <button type="button" data-corrected-test data-r="0" data-g="0" data-b="160" data-w="0">Blue</button>
-              <button type="button" data-corrected-test data-r="0" data-g="0" data-b="0" data-w="160">White LED</button>
+              <button type="button" data-preview-channel="red" data-corrected-test data-r="160" data-g="0" data-b="0" data-w="0">Red</button>
+              <button type="button" data-preview-channel="green" data-corrected-test data-r="0" data-g="160" data-b="0" data-w="0">Green</button>
+              <button type="button" data-preview-channel="blue" data-corrected-test data-r="0" data-g="0" data-b="160" data-w="0">Blue</button>
+              <button type="button" data-preview-channel="white" data-corrected-test data-r="0" data-g="0" data-b="0" data-w="160">White LED</button>
               <button type="button" data-corrected-test data-r="0" data-g="0" data-b="0" data-w="0">Off</button>
             </div>
             <h5>Verify mixed colors</h5>
