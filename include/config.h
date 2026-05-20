@@ -115,6 +115,12 @@ struct LedConfig {
         uint8_t green = HYPERK_DEFAULT_OUTPUT_GREEN_GAIN;
         uint8_t blue  = HYPERK_DEFAULT_OUTPUT_BLUE_GAIN;
         uint8_t white = HYPERK_DEFAULT_OUTPUT_WHITE_GAIN;
+        uint8_t redToGreen = 0;
+        uint8_t redToBlue = 0;
+        uint8_t greenToRed = 0;
+        uint8_t greenToBlue = 0;
+        uint8_t blueToRed = 0;
+        uint8_t blueToGreen = 0;
         bool rgbToWhite = HYPERK_DEFAULT_RGB_TO_WHITE_CONVERSION != 0;
     };
 

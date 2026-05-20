@@ -38,14 +38,17 @@ function setTuningValue(name, value) {
     const nextValue = clampChannelValue(value);
     const number = document.querySelector(`[data-tuning-number="${name}"]`);
     const range = document.querySelector(`[data-tuning-range="${name}"]`);
+    const named = document.querySelector(`[name="${name}"]`);
 
     if (number) number.value = nextValue;
     if (range) range.value = nextValue;
+    if (named && named !== number) named.value = nextValue;
 }
 
 function getTuningValue(name) {
     const number = document.querySelector(`[data-tuning-number="${name}"]`);
-    return clampChannelValue(number?.value ?? 0);
+    const named = document.querySelector(`[name="${name}"]`);
+    return clampChannelValue(number?.value ?? named?.value ?? 0);
 }
 
 function collectTuningParams() {
@@ -54,6 +57,12 @@ function collectTuningParams() {
         outputGreen: getTuningValue('outputGreen'),
         outputBlue: getTuningValue('outputBlue'),
         outputWhite: getTuningValue('outputWhite'),
+        outputRedToGreen: getTuningValue('outputRedToGreen'),
+        outputRedToBlue: getTuningValue('outputRedToBlue'),
+        outputGreenToRed: getTuningValue('outputGreenToRed'),
+        outputGreenToBlue: getTuningValue('outputGreenToBlue'),
+        outputBlueToRed: getTuningValue('outputBlueToRed'),
+        outputBlueToGreen: getTuningValue('outputBlueToGreen'),
         rgbToWhiteConversion: document.querySelector('[name="rgbToWhiteConversion"]')?.checked ? '1' : '0'
     });
 
@@ -108,9 +117,9 @@ function setupTuningControls() {
     });
 
     const presets = {
-        anime: { outputRed: 255, outputGreen: 185, outputBlue: 95, outputWhite: 0, rgbToWhite: false },
-        neutral: { outputRed: 255, outputGreen: 215, outputBlue: 150, outputWhite: 0, rgbToWhite: false },
-        reset: { outputRed: 255, outputGreen: 255, outputBlue: 255, outputWhite: 255, rgbToWhite: false }
+        anime: { outputRed: 255, outputGreen: 185, outputBlue: 120, outputWhite: 0, outputBlueToGreen: 35, outputBlueToRed: 0, rgbToWhite: false },
+        neutral: { outputRed: 255, outputGreen: 215, outputBlue: 150, outputWhite: 0, outputBlueToGreen: 20, outputBlueToRed: 0, rgbToWhite: false },
+        reset: { outputRed: 255, outputGreen: 255, outputBlue: 255, outputWhite: 255, outputBlueToGreen: 0, outputBlueToRed: 0, rgbToWhite: false }
     };
 
     document.querySelectorAll('[data-tuning-preset]').forEach((button) => {
@@ -122,6 +131,12 @@ function setupTuningControls() {
             setTuningValue('outputGreen', preset.outputGreen);
             setTuningValue('outputBlue', preset.outputBlue);
             setTuningValue('outputWhite', preset.outputWhite);
+            setTuningValue('outputRedToGreen', 0);
+            setTuningValue('outputRedToBlue', 0);
+            setTuningValue('outputGreenToRed', 0);
+            setTuningValue('outputGreenToBlue', 0);
+            setTuningValue('outputBlueToRed', preset.outputBlueToRed);
+            setTuningValue('outputBlueToGreen', preset.outputBlueToGreen);
             const mixer = document.querySelector('[name="rgbToWhiteConversion"]');
             if (mixer) mixer.checked = preset.rgbToWhite;
 

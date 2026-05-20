@@ -197,6 +197,21 @@ namespace Leds{
         return (static_cast<uint16_t>(v) * briPlus) >> 8;
     }
 
+    inline uint8_t clampChannel(uint16_t v)
+    {
+        return static_cast<uint8_t>(v > 255 ? 255 : v);
+    }
+
+    inline ColorRgbw applyOutputMix(uint8_t r, uint8_t g, uint8_t b, uint8_t w, const LedConfig::OutputCorrection& output)
+    {
+        return {
+            clampChannel(scaleGain(r, output.red) + scaleGain(g, output.greenToRed) + scaleGain(b, output.blueToRed)),
+            clampChannel(scaleGain(g, output.green) + scaleGain(r, output.redToGreen) + scaleGain(b, output.blueToGreen)),
+            clampChannel(scaleGain(b, output.blue) + scaleGain(r, output.redToBlue) + scaleGain(g, output.greenToBlue)),
+            scaleGain(w, output.white)
+        };
+    }
+
     template<bool applyBrightness>
     void setLed(int index, uint8_t r, uint8_t g, uint8_t b)
     {
@@ -207,25 +222,23 @@ namespace Leds{
         }
 
         const auto& ledCfg = Config::cfg.led;
-        r = scaleGain(r, ledCfg.output.red);
-        g = scaleGain(g, ledCfg.output.green);
-        b = scaleGain(b, ledCfg.output.blue);
+        ColorRgbw mixed = applyOutputMix(r, g, b, 0, ledCfg.output);
 
         if (ledCfg.type == LedType::SK6812)
         {
             if (ledCfg.output.rgbToWhite)
             {
-                const ColorRgbw converted = rgb2rgbw(r, g, b);
+                const ColorRgbw converted = rgb2rgbw(mixed.R, mixed.G, mixed.B);
                 renderer.setLedRgbw(index, converted.R, converted.G, converted.B, scaleGain(converted.W, ledCfg.output.white));
             }
             else
             {
-                renderer.setLedRgbw(index, r, g, b, 0);
+                renderer.setLedRgbw(index, mixed.R, mixed.G, mixed.B, 0);
             }
             return;
         }
 
-        renderer.setLedRgb(index, r, g, b);
+        renderer.setLedRgb(index, mixed.R, mixed.G, mixed.B);
     }
 
     template<bool applyBrightness>
@@ -238,13 +251,9 @@ namespace Leds{
             w = scaleBri(w);
         }
 
-        const auto& output = Config::cfg.led.output;
-        r = scaleGain(r, output.red);
-        g = scaleGain(g, output.green);
-        b = scaleGain(b, output.blue);
-        w = scaleGain(w, output.white);
+        const ColorRgbw mixed = applyOutputMix(r, g, b, w, Config::cfg.led.output);
 
-        renderer.setLedRgbw(index, r, g, b, w);
+        renderer.setLedRgbw(index, mixed.R, mixed.G, mixed.B, mixed.W);
     }
 
     void testRawColor(uint8_t r, uint8_t g, uint8_t b, uint8_t w)
@@ -263,30 +272,27 @@ namespace Leds{
     {
         tryWaitForRenderer();
 
-        r = scaleGain(r, output.red);
-        g = scaleGain(g, output.green);
-        b = scaleGain(b, output.blue);
-        w = scaleGain(w, output.white);
+        ColorRgbw mixed = applyOutputMix(r, g, b, w, output);
 
-        if (Config::cfg.led.type == LedType::SK6812 && output.rgbToWhite && w == 0)
+        if (Config::cfg.led.type == LedType::SK6812 && output.rgbToWhite && mixed.W == 0)
         {
-            const ColorRgbw converted = rgb2rgbw(r, g, b);
-            r = converted.R;
-            g = converted.G;
-            b = converted.B;
-            w = scaleGain(converted.W, output.white);
+            const ColorRgbw converted = rgb2rgbw(mixed.R, mixed.G, mixed.B);
+            mixed.R = converted.R;
+            mixed.G = converted.G;
+            mixed.B = converted.B;
+            mixed.W = scaleGain(converted.W, output.white);
         }
 
-        Volatile::setRelay(r || g || b || w);
+        Volatile::setRelay(mixed.R || mixed.G || mixed.B || mixed.W);
 
         for(int i = 0; i < getLedsNumber(); i++) {
             if (Config::cfg.led.type == LedType::SK6812)
             {
-                renderer.setLedRgbw(i, r, g, b, w);
+                renderer.setLedRgbw(i, mixed.R, mixed.G, mixed.B, mixed.W);
             }
             else
             {
-                renderer.setLedRgb(i, r, g, b);
+                renderer.setLedRgb(i, mixed.R, mixed.G, mixed.B);
             }
         }
 

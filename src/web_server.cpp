@@ -246,6 +246,12 @@ void setupWebServer(AsyncWebServer& server) {
         if (request->hasParam("outputGreen", true)) cfg.led.output.green = constrain(request->getParam("outputGreen", true)->value().toInt(), 0, 255);
         if (request->hasParam("outputBlue", true)) cfg.led.output.blue = constrain(request->getParam("outputBlue", true)->value().toInt(), 0, 255);
         if (request->hasParam("outputWhite", true)) cfg.led.output.white = constrain(request->getParam("outputWhite", true)->value().toInt(), 0, 255);
+        if (request->hasParam("outputRedToGreen", true)) cfg.led.output.redToGreen = constrain(request->getParam("outputRedToGreen", true)->value().toInt(), 0, 255);
+        if (request->hasParam("outputRedToBlue", true)) cfg.led.output.redToBlue = constrain(request->getParam("outputRedToBlue", true)->value().toInt(), 0, 255);
+        if (request->hasParam("outputGreenToRed", true)) cfg.led.output.greenToRed = constrain(request->getParam("outputGreenToRed", true)->value().toInt(), 0, 255);
+        if (request->hasParam("outputGreenToBlue", true)) cfg.led.output.greenToBlue = constrain(request->getParam("outputGreenToBlue", true)->value().toInt(), 0, 255);
+        if (request->hasParam("outputBlueToRed", true)) cfg.led.output.blueToRed = constrain(request->getParam("outputBlueToRed", true)->value().toInt(), 0, 255);
+        if (request->hasParam("outputBlueToGreen", true)) cfg.led.output.blueToGreen = constrain(request->getParam("outputBlueToGreen", true)->value().toInt(), 0, 255);
         cfg.led.output.rgbToWhite = request->hasParam("rgbToWhiteConversion", true);
 
         const bool standaloneApMode = isAPMode();
@@ -343,6 +349,12 @@ void setupWebServer(AsyncWebServer& server) {
         output.green = readGain("outputGreen", output.green);
         output.blue = readGain("outputBlue", output.blue);
         output.white = readGain("outputWhite", output.white);
+        output.redToGreen = readGain("outputRedToGreen", output.redToGreen);
+        output.redToBlue = readGain("outputRedToBlue", output.redToBlue);
+        output.greenToRed = readGain("outputGreenToRed", output.greenToRed);
+        output.greenToBlue = readGain("outputGreenToBlue", output.greenToBlue);
+        output.blueToRed = readGain("outputBlueToRed", output.blueToRed);
+        output.blueToGreen = readGain("outputBlueToGreen", output.blueToGreen);
         if (request->hasParam("rgbToWhiteConversion", true)) {
             output.rgbToWhite = request->getParam("rgbToWhiteConversion", true)->value().toInt() != 0;
         }
@@ -382,6 +394,12 @@ void setupWebServer(AsyncWebServer& server) {
         led["outputGreen"]  = cfg.led.output.green;
         led["outputBlue"]   = cfg.led.output.blue;
         led["outputWhite"]  = cfg.led.output.white;
+        led["outputRedToGreen"] = cfg.led.output.redToGreen;
+        led["outputRedToBlue"] = cfg.led.output.redToBlue;
+        led["outputGreenToRed"] = cfg.led.output.greenToRed;
+        led["outputGreenToBlue"] = cfg.led.output.greenToBlue;
+        led["outputBlueToRed"] = cfg.led.output.blueToRed;
+        led["outputBlueToGreen"] = cfg.led.output.blueToGreen;
         led["rgbToWhiteConversion"] = cfg.led.output.rgbToWhite;
 
 

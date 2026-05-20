@@ -129,15 +129,15 @@
               <button type="button" class="secondary" data-tuning-preset="reset">Reset</button>
             </div>
             <div class="tuning-grid">
-              <label>Red
+              <label>Red strength
                 <input type="range" min="0" max="255" value="255" data-tuning-range="outputRed">
                 <input type="number" name="outputRed" min="0" max="255" value="255" data-tuning-number="outputRed">
               </label>
-              <label>Green
+              <label>Green strength
                 <input type="range" min="0" max="255" value="255" data-tuning-range="outputGreen">
                 <input type="number" name="outputGreen" min="0" max="255" value="255" data-tuning-number="outputGreen">
               </label>
-              <label>Blue
+              <label>Blue strength
                 <input type="range" min="0" max="255" value="255" data-tuning-range="outputBlue">
                 <input type="number" name="outputBlue" min="0" max="255" value="255" data-tuning-number="outputBlue">
               </label>
@@ -146,6 +146,21 @@
                 <input type="number" name="outputWhite" min="0" max="255" value="255" data-tuning-number="outputWhite">
               </label>
             </div>
+            <h5>Blue repair</h5>
+            <div class="tuning-grid">
+              <label>Add green to blue
+                <input type="range" min="0" max="255" value="0" data-tuning-range="outputBlueToGreen">
+                <input type="number" name="outputBlueToGreen" min="0" max="255" value="0" data-tuning-number="outputBlueToGreen">
+              </label>
+              <label>Add red to blue
+                <input type="range" min="0" max="255" value="0" data-tuning-range="outputBlueToRed">
+                <input type="number" name="outputBlueToRed" min="0" max="255" value="0" data-tuning-number="outputBlueToRed">
+              </label>
+            </div>
+            <input type="hidden" name="outputRedToGreen" value="0">
+            <input type="hidden" name="outputRedToBlue" value="0">
+            <input type="hidden" name="outputGreenToRed" value="0">
+            <input type="hidden" name="outputGreenToBlue" value="0">
             <label class="white-mixer-control">
               <input type="checkbox" name="rgbToWhiteConversion" role="switch">
               White mixer
@@ -396,7 +411,7 @@
                   fwInfo.innerHTML = `<strong>${cfgDeviceVersion || 'unknown'}</strong> <small style="opacity:0.75">(${cfgDeviceArchitecture || '—'})</small>`;
               }
 
-              const fields = ['type', 'rgbwOrder', 'numLeds', 'relay-gpio', 'relay-inverted', 'brightness', 'r', 'g', 'b', 'effect', 'deviceName', 'extraMdnsTag', 'calGain', 'calRed', 'calGreen', 'calBlue', 'outputRed', 'outputGreen', 'outputBlue', 'outputWhite', 'rgbToWhiteConversion'];
+              const fields = ['type', 'rgbwOrder', 'numLeds', 'relay-gpio', 'relay-inverted', 'brightness', 'r', 'g', 'b', 'effect', 'deviceName', 'extraMdnsTag', 'calGain', 'calRed', 'calGreen', 'calBlue', 'outputRed', 'outputGreen', 'outputBlue', 'outputWhite', 'outputRedToGreen', 'outputRedToBlue', 'outputGreenToRed', 'outputGreenToBlue', 'outputBlueToRed', 'outputBlueToGreen', 'rgbToWhiteConversion'];
               fields.forEach(field => {
                   const el = document.querySelector(`[name="${field}"]`);
                   if (el && l[field] !== undefined){       
