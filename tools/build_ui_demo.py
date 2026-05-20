@@ -14,7 +14,7 @@ DEMO_CONFIG = {
     "ssid": "Theater WiFi",
     "architecture": "ESP32",
     "board": "esp32-wled-esp32-ota-quinled-rgbw",
-    "version": "0.0.4-quinled.9-demo",
+    "version": "demo",
     "segments": [{"data": 16, "clock": 0, "startIndex": 0}],
     "segmentSupported": 2,
     "apMode": False,
@@ -99,9 +99,14 @@ MOCK_SCRIPT = r"""
     return new URLSearchParams();
   }
 
-  function updatePreview(title, values) {
-    const swatch = document.getElementById("demo-output-swatch");
-    const text = document.getElementById("demo-output-text");
+  function formatChannelValues(values) {
+    const [r, g, b, w] = values.map(clamp);
+    return `R ${r} / G ${g} / B ${b} / W ${w}`;
+  }
+
+  function updatePreview(title, values, requestedValues = null) {
+    const swatch = document.getElementById("output-preview-swatch");
+    const text = document.getElementById("output-preview-text");
     if (!swatch || !text) return;
 
     const [r, g, b, w] = values.map(clamp);
@@ -110,7 +115,23 @@ MOCK_SCRIPT = r"""
     const displayB = clamp(b + w);
 
     swatch.style.background = `rgb(${displayR}, ${displayG}, ${displayB})`;
-    text.textContent = `${title}: R ${r} / G ${g} / B ${b} / W ${w}`;
+    text.innerHTML = "";
+
+    const titleLine = document.createElement("div");
+    titleLine.className = "output-preview-label";
+    titleLine.textContent = title;
+    text.appendChild(titleLine);
+
+    if (requestedValues) {
+      const requestLine = document.createElement("div");
+      requestLine.textContent = `Requested: ${formatChannelValues(requestedValues)}`;
+      text.appendChild(requestLine);
+    }
+
+    const outputLine = document.createElement("div");
+    outputLine.className = "output-preview-output";
+    outputLine.textContent = `After tuning: ${formatChannelValues([r, g, b, w])}`;
+    text.appendChild(outputLine);
   }
 
   async function handleCorrectedPreview(init) {
@@ -139,7 +160,7 @@ MOCK_SCRIPT = r"""
       outB -= shared;
     }
 
-    updatePreview("Corrected preview", [outR, outG, outB, outW]);
+    updatePreview("Corrected preview", [outR, outG, outB, outW], [r, g, b, w]);
     return jsonResponse({ status: "ok" });
   }
 
@@ -243,17 +264,6 @@ MOCK_SCRIPT = r"""
     };
     return xhr;
   };
-
-  document.addEventListener("DOMContentLoaded", () => {
-    const panel = document.createElement("aside");
-    panel.className = "demo-output-panel";
-    panel.innerHTML = `
-      <div class="demo-output-title">Local UI demo</div>
-      <div id="demo-output-swatch" class="demo-output-swatch"></div>
-      <div id="demo-output-text" class="demo-output-text">Press a preview button to simulate output.</div>
-    `;
-    document.body.appendChild(panel);
-  });
 })();
 </script>
 """
@@ -273,10 +283,15 @@ DEMO_HELPER_SCRIPT = r"""
   };
 
   document.addEventListener("DOMContentLoaded", () => {
-    const hardware = document.querySelector('form[action="/save_config"] details');
+    const sections = document.querySelectorAll('form[action="/save_config"] details');
+    const hardware = sections[0];
+    const calibration = sections[1];
     setTimeout(() => {
       if (hardware && !hardware.open) {
         hardware.open = true;
+      }
+      if (calibration && !calibration.open) {
+        calibration.open = true;
       }
       window.loadSubScript("gpio", "setupPinValidator");
       window.loadSubScript("calibration", "setupCalibration");
@@ -285,51 +300,6 @@ DEMO_HELPER_SCRIPT = r"""
 })();
 </script>
 """
-
-
-DEMO_CSS = """
-<style>
-.demo-output-panel {
-  position: fixed;
-  right: 1rem;
-  bottom: 1rem;
-  z-index: 1000;
-  width: min(22rem, calc(100vw - 2rem));
-  padding: 0.85rem;
-  border: 1px solid var(--pico-form-element-border-color);
-  border-radius: var(--pico-border-radius);
-  background: var(--pico-card-background-color);
-  box-shadow: 0 0.75rem 2rem rgba(0, 0, 0, 0.35);
-}
-
-.demo-output-title {
-  margin-bottom: 0.5rem;
-  font-weight: 700;
-}
-
-.demo-output-swatch {
-  height: 3rem;
-  border: 1px solid var(--pico-form-element-border-color);
-  border-radius: var(--pico-border-radius);
-  background: #000;
-}
-
-.demo-output-text {
-  margin-top: 0.5rem;
-  color: var(--pico-muted-color);
-  font-size: 0.85rem;
-}
-
-@media (max-width: 720px) {
-  .demo-output-panel {
-    position: static;
-    width: auto;
-    margin: 1rem;
-  }
-}
-</style>
-"""
-
 
 def style_tag(path: Path) -> str:
     return f"<style>\n{path.read_text(encoding='utf-8')}\n</style>"
@@ -342,6 +312,8 @@ def script_tag(path: Path) -> str:
 
 def main() -> None:
     version = (ROOT / "version").read_text(encoding="utf-8").strip()
+    demo_config = dict(DEMO_CONFIG)
+    demo_config["version"] = f"{version}-demo"
     html = (DATA / "settings.html").read_text(encoding="utf-8")
 
     html = re.sub(r'\s*<link rel="stylesheet" href="/css/[^"]+">\n?', "\n", html)
@@ -351,7 +323,7 @@ def main() -> None:
         style_tag(DATA / "css" / name)
         for name in ("pico.min.css", "style.css", "settings.css")
     )
-    html = html.replace("</head>", f"{inline_styles}\n{DEMO_CSS}\n{MOCK_SCRIPT.replace('__DEMO_CONFIG__', json.dumps(DEMO_CONFIG))}\n</head>")
+    html = html.replace("</head>", f"{inline_styles}\n{MOCK_SCRIPT.replace('__DEMO_CONFIG__', json.dumps(demo_config))}\n</head>")
 
     inline_scripts = "\n".join(
         script_tag(DATA / name)

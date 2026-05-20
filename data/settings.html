@@ -106,9 +106,13 @@
               Inverted
             </label>
           </div>
-        
+        </div>
+      </details>
+
+      <details ontoggle="loadSubScript('calibration', 'setupCalibration');">
+        <summary role="button" class="outline secondary">RGBW Calibration</summary>
+        <div>
           <div id="whiteCalibration" style="display: none;">
-            <hr class="section-divider">
             <h5>White channel calibration</h5>
             <div class="calibration-grid">
               <label>R <input type="number" name="calRed" min="0" max="255" value="160"></label>
@@ -194,6 +198,10 @@
                 </label>
               </div>
             </section>
+            <div class="tuning-actions">
+              <button type="button" id="reset-output-tuning" class="secondary outline">Reset</button>
+              <button type="button" id="save-output-tuning">Save</button>
+            </div>
             <h5>Preview physical channels</h5>
             <div class="test-grid">
               <button type="button" data-preview-channel="red" data-corrected-test data-r="160" data-g="0" data-b="0" data-w="0">Red</button>
@@ -216,10 +224,6 @@
                 <button type="button" data-raw-test data-r="0" data-g="128" data-b="0" data-w="0">G</button>
                 <button type="button" data-raw-test data-r="0" data-g="0" data-b="128" data-w="0">B</button>
                 <button type="button" data-raw-test data-r="0" data-g="0" data-b="0" data-w="128">W</button>
-                <button type="button" data-raw-test data-r="128" data-g="128" data-b="0" data-w="0">Y</button>
-                <button type="button" data-raw-test data-r="0" data-g="128" data-b="128" data-w="0">C</button>
-                <button type="button" data-raw-test data-r="128" data-g="0" data-b="128" data-w="0">M</button>
-                <button type="button" data-raw-test data-r="128" data-g="128" data-b="128" data-w="0">RGB</button>
                 <button type="button" data-raw-test data-r="0" data-g="0" data-b="0" data-w="0">Off</button>
               </div>
             </details>
@@ -228,13 +232,13 @@
       </details>
 
       <details>
-        <summary role="button" class="outline secondary">Light Preset</summary>
+        <summary role="button" class="outline secondary">Standby Light State</summary>
         <div>
           <label>Brightness (1–255)
             <input type="number" name="brightness" min="1" max="255" value="255" oninput="this.nextElementSibling.value=this.value"><input type="range" min="1" max="255" value="255" oninput="this.previousElementSibling.value=this.value">
           </label>
 
-          <label>Default Color
+          <label>Standby Color
             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
               <label>R <input type="number" name="r" min="0" max="255" value="196" oninput="this.nextElementSibling.value=this.value"><input type="range" min="0" max="255" value="196" oninput="this.previousElementSibling.value=this.value"></label>
               <label>G <input type="number" name="g" min="0" max="255" value="32" oninput="this.nextElementSibling.value=this.value"><input type="range" min="0" max="255" value="32" oninput="this.previousElementSibling.value=this.value"></label>
@@ -242,7 +246,7 @@
             </div>
           </label>
 
-          <label>Default Effect
+          <label>Standby Effect
             <select name="effect">
               <option value="0">Solid Color</option>
               <option value="1">Rainbow</option>
@@ -346,6 +350,11 @@
       </footer>
     </article>
   </dialog>
+  <aside id="output-preview-panel" class="output-preview-panel">
+    <div class="output-preview-title">Output preview</div>
+    <div id="output-preview-swatch" class="output-preview-swatch"></div>
+    <div id="output-preview-text" class="output-preview-text">Press a preview button to simulate output.</div>
+  </aside>
   <script>
       let scanInterval = 3500;
       let cfgDeviceArchitecture = "";

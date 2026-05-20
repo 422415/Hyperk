@@ -177,9 +177,25 @@ details summary[role="button"]:focus {
   margin-bottom: 0;
 }
 
+.calibration-grid input[type="number"],
 .calibration-grid button {
-  min-height: 2.45rem;
-  padding: 0.45rem 0.75rem;
+  height: calc(1.5rem + var(--pico-form-element-spacing-vertical) + var(--pico-form-element-spacing-vertical) + var(--pico-border-width) + var(--pico-border-width));
+}
+
+.calibration-grid button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: var(--pico-form-element-spacing-vertical) var(--pico-form-element-spacing-horizontal);
+  border: var(--pico-border-width) solid var(--pico-primary-border);
+  line-height: 1.5;
+  box-shadow: none !important;
+  appearance: none;
+}
+
+.calibration-grid button:focus {
+  box-shadow: 0 0 0 var(--pico-outline-width) var(--pico-primary-focus) !important;
 }
 
 .test-grid {
@@ -227,6 +243,18 @@ details summary[role="button"]:focus {
   margin-bottom: 0.75rem;
 }
 
+.tuning-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 10rem));
+  justify-content: end;
+  gap: 0.5rem;
+  margin: -0.25rem 0 1rem;
+}
+
+.tuning-actions button {
+  margin-bottom: 0;
+}
+
 .tuning-grid input[type="number"] {
   margin-top: 0.35rem;
 }
@@ -257,8 +285,56 @@ details summary[role="button"]:focus {
   cursor: pointer;
 }
 
+.output-preview-panel {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 1000;
+  width: min(22rem, calc(100vw - 2rem));
+  padding: 0.85rem;
+  border: 1px solid var(--pico-form-element-border-color);
+  border-radius: var(--pico-border-radius);
+  background: var(--pico-card-background-color);
+  box-shadow: 0 0.75rem 2rem rgba(0, 0, 0, 0.35);
+}
+
+.output-preview-title {
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+}
+
+.output-preview-swatch {
+  height: 3rem;
+  border: 1px solid var(--pico-form-element-border-color);
+  border-radius: var(--pico-border-radius);
+  background: #000;
+}
+
+.output-preview-text {
+  margin-top: 0.5rem;
+  color: var(--pico-muted-color);
+  font-size: 0.85rem;
+}
+
+.output-preview-text div + div {
+  margin-top: 0.2rem;
+}
+
+.output-preview-label {
+  color: var(--pico-color);
+  font-weight: 700;
+}
+
+.output-preview-output {
+  color: var(--pico-color);
+}
+
 @media (max-width: 720px) {
   .calibration-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tuning-actions {
     grid-template-columns: 1fr;
   }
 
@@ -272,5 +348,11 @@ details summary[role="button"]:focus {
 
   .test-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .output-preview-panel {
+    position: static;
+    width: auto;
+    margin: 1rem;
   }
 }

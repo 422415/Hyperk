@@ -208,9 +208,25 @@ details summary[role="button"]:focus {
   margin-bottom: 0;
 }
 
+.calibration-grid input[type="number"],
 .calibration-grid button {
-  min-height: 2.45rem;
-  padding: 0.45rem 0.75rem;
+  height: calc(1.5rem + var(--pico-form-element-spacing-vertical) + var(--pico-form-element-spacing-vertical) + var(--pico-border-width) + var(--pico-border-width));
+}
+
+.calibration-grid button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: var(--pico-form-element-spacing-vertical) var(--pico-form-element-spacing-horizontal);
+  border: var(--pico-border-width) solid var(--pico-primary-border);
+  line-height: 1.5;
+  box-shadow: none !important;
+  appearance: none;
+}
+
+.calibration-grid button:focus {
+  box-shadow: 0 0 0 var(--pico-outline-width) var(--pico-primary-focus) !important;
 }
 
 .test-grid {
@@ -258,6 +274,18 @@ details summary[role="button"]:focus {
   margin-bottom: 0.75rem;
 }
 
+.tuning-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 10rem));
+  justify-content: end;
+  gap: 0.5rem;
+  margin: -0.25rem 0 1rem;
+}
+
+.tuning-actions button {
+  margin-bottom: 0;
+}
+
 .tuning-grid input[type="number"] {
   margin-top: 0.35rem;
 }
@@ -288,8 +316,56 @@ details summary[role="button"]:focus {
   cursor: pointer;
 }
 
+.output-preview-panel {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 1000;
+  width: min(22rem, calc(100vw - 2rem));
+  padding: 0.85rem;
+  border: 1px solid var(--pico-form-element-border-color);
+  border-radius: var(--pico-border-radius);
+  background: var(--pico-card-background-color);
+  box-shadow: 0 0.75rem 2rem rgba(0, 0, 0, 0.35);
+}
+
+.output-preview-title {
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+}
+
+.output-preview-swatch {
+  height: 3rem;
+  border: 1px solid var(--pico-form-element-border-color);
+  border-radius: var(--pico-border-radius);
+  background: #000;
+}
+
+.output-preview-text {
+  margin-top: 0.5rem;
+  color: var(--pico-muted-color);
+  font-size: 0.85rem;
+}
+
+.output-preview-text div + div {
+  margin-top: 0.2rem;
+}
+
+.output-preview-label {
+  color: var(--pico-color);
+  font-weight: 700;
+}
+
+.output-preview-output {
+  color: var(--pico-color);
+}
+
 @media (max-width: 720px) {
   .calibration-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tuning-actions {
     grid-template-columns: 1fr;
   }
 
@@ -304,55 +380,19 @@ details summary[role="button"]:focus {
   .test-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-}
 
-</style>
-
-<style>
-.demo-output-panel {
-  position: fixed;
-  right: 1rem;
-  bottom: 1rem;
-  z-index: 1000;
-  width: min(22rem, calc(100vw - 2rem));
-  padding: 0.85rem;
-  border: 1px solid var(--pico-form-element-border-color);
-  border-radius: var(--pico-border-radius);
-  background: var(--pico-card-background-color);
-  box-shadow: 0 0.75rem 2rem rgba(0, 0, 0, 0.35);
-}
-
-.demo-output-title {
-  margin-bottom: 0.5rem;
-  font-weight: 700;
-}
-
-.demo-output-swatch {
-  height: 3rem;
-  border: 1px solid var(--pico-form-element-border-color);
-  border-radius: var(--pico-border-radius);
-  background: #000;
-}
-
-.demo-output-text {
-  margin-top: 0.5rem;
-  color: var(--pico-muted-color);
-  font-size: 0.85rem;
-}
-
-@media (max-width: 720px) {
-  .demo-output-panel {
+  .output-preview-panel {
     position: static;
     width: auto;
     margin: 1rem;
   }
 }
-</style>
 
+</style>
 
 <script>
 (() => {
-  const demoConfig = {"ssid": "Theater WiFi", "architecture": "ESP32", "board": "esp32-wled-esp32-ota-quinled-rgbw", "version": "0.0.4-quinled.9-demo", "segments": [{"data": 16, "clock": 0, "startIndex": 0}], "segmentSupported": 2, "apMode": false, "type": 1, "rgbwOrder": 1, "numLeds": 52, "relay-gpio": -1, "relay-inverted": false, "brightness": 255, "r": 255, "g": 255, "b": 0, "effect": 0, "deviceName": "hyperk-demo", "extraMdnsTag": "wled", "calGain": 255, "calRed": 176, "calGreen": 176, "calBlue": 112, "outputRed": 255, "outputGreen": 255, "outputBlue": 255, "outputWhite": 255, "outputRedToGreen": 0, "outputRedToBlue": 0, "outputGreenToRed": 0, "outputGreenToBlue": 0, "outputBlueToRed": 0, "outputBlueToGreen": 0, "rgbToWhiteConversion": false};
+  const demoConfig = {"ssid": "Theater WiFi", "architecture": "ESP32", "board": "esp32-wled-esp32-ota-quinled-rgbw", "version": "0.0.4-quinled.10-demo", "segments": [{"data": 16, "clock": 0, "startIndex": 0}], "segmentSupported": 2, "apMode": false, "type": 1, "rgbwOrder": 1, "numLeds": 52, "relay-gpio": -1, "relay-inverted": false, "brightness": 255, "r": 255, "g": 255, "b": 0, "effect": 0, "deviceName": "hyperk-demo", "extraMdnsTag": "wled", "calGain": 255, "calRed": 176, "calGreen": 176, "calBlue": 112, "outputRed": 255, "outputGreen": 255, "outputBlue": 255, "outputWhite": 255, "outputRedToGreen": 0, "outputRedToBlue": 0, "outputGreenToRed": 0, "outputGreenToBlue": 0, "outputBlueToRed": 0, "outputBlueToGreen": 0, "rgbToWhiteConversion": false};
   const nativeFetch = window.fetch ? window.fetch.bind(window) : null;
 
   function jsonResponse(data, status = 200) {
@@ -400,9 +440,14 @@ details summary[role="button"]:focus {
     return new URLSearchParams();
   }
 
-  function updatePreview(title, values) {
-    const swatch = document.getElementById("demo-output-swatch");
-    const text = document.getElementById("demo-output-text");
+  function formatChannelValues(values) {
+    const [r, g, b, w] = values.map(clamp);
+    return `R ${r} / G ${g} / B ${b} / W ${w}`;
+  }
+
+  function updatePreview(title, values, requestedValues = null) {
+    const swatch = document.getElementById("output-preview-swatch");
+    const text = document.getElementById("output-preview-text");
     if (!swatch || !text) return;
 
     const [r, g, b, w] = values.map(clamp);
@@ -411,7 +456,23 @@ details summary[role="button"]:focus {
     const displayB = clamp(b + w);
 
     swatch.style.background = `rgb(${displayR}, ${displayG}, ${displayB})`;
-    text.textContent = `${title}: R ${r} / G ${g} / B ${b} / W ${w}`;
+    text.innerHTML = "";
+
+    const titleLine = document.createElement("div");
+    titleLine.className = "output-preview-label";
+    titleLine.textContent = title;
+    text.appendChild(titleLine);
+
+    if (requestedValues) {
+      const requestLine = document.createElement("div");
+      requestLine.textContent = `Requested: ${formatChannelValues(requestedValues)}`;
+      text.appendChild(requestLine);
+    }
+
+    const outputLine = document.createElement("div");
+    outputLine.className = "output-preview-output";
+    outputLine.textContent = `After tuning: ${formatChannelValues([r, g, b, w])}`;
+    text.appendChild(outputLine);
   }
 
   async function handleCorrectedPreview(init) {
@@ -440,7 +501,7 @@ details summary[role="button"]:focus {
       outB -= shared;
     }
 
-    updatePreview("Corrected preview", [outR, outG, outB, outW]);
+    updatePreview("Corrected preview", [outR, outG, outB, outW], [r, g, b, w]);
     return jsonResponse({ status: "ok" });
   }
 
@@ -544,17 +605,6 @@ details summary[role="button"]:focus {
     };
     return xhr;
   };
-
-  document.addEventListener("DOMContentLoaded", () => {
-    const panel = document.createElement("aside");
-    panel.className = "demo-output-panel";
-    panel.innerHTML = `
-      <div class="demo-output-title">Local UI demo</div>
-      <div id="demo-output-swatch" class="demo-output-swatch"></div>
-      <div id="demo-output-text" class="demo-output-text">Press a preview button to simulate output.</div>
-    `;
-    document.body.appendChild(panel);
-  });
 })();
 </script>
 
@@ -656,9 +706,13 @@ details summary[role="button"]:focus {
               Inverted
             </label>
           </div>
+        </div>
+      </details>
 
+      <details ontoggle="loadSubScript('calibration', 'setupCalibration');">
+        <summary role="button" class="outline secondary">RGBW Calibration</summary>
+        <div>
           <div id="whiteCalibration" style="display: none;">
-            <hr class="section-divider">
             <h5>White channel calibration</h5>
             <div class="calibration-grid">
               <label>R <input type="number" name="calRed" min="0" max="255" value="160"></label>
@@ -744,6 +798,10 @@ details summary[role="button"]:focus {
                 </label>
               </div>
             </section>
+            <div class="tuning-actions">
+              <button type="button" id="reset-output-tuning" class="secondary outline">Reset</button>
+              <button type="button" id="save-output-tuning">Save</button>
+            </div>
             <h5>Preview physical channels</h5>
             <div class="test-grid">
               <button type="button" data-preview-channel="red" data-corrected-test data-r="160" data-g="0" data-b="0" data-w="0">Red</button>
@@ -766,10 +824,6 @@ details summary[role="button"]:focus {
                 <button type="button" data-raw-test data-r="0" data-g="128" data-b="0" data-w="0">G</button>
                 <button type="button" data-raw-test data-r="0" data-g="0" data-b="128" data-w="0">B</button>
                 <button type="button" data-raw-test data-r="0" data-g="0" data-b="0" data-w="128">W</button>
-                <button type="button" data-raw-test data-r="128" data-g="128" data-b="0" data-w="0">Y</button>
-                <button type="button" data-raw-test data-r="0" data-g="128" data-b="128" data-w="0">C</button>
-                <button type="button" data-raw-test data-r="128" data-g="0" data-b="128" data-w="0">M</button>
-                <button type="button" data-raw-test data-r="128" data-g="128" data-b="128" data-w="0">RGB</button>
                 <button type="button" data-raw-test data-r="0" data-g="0" data-b="0" data-w="0">Off</button>
               </div>
             </details>
@@ -778,13 +832,13 @@ details summary[role="button"]:focus {
       </details>
 
       <details>
-        <summary role="button" class="outline secondary">Light Preset</summary>
+        <summary role="button" class="outline secondary">Standby Light State</summary>
         <div>
           <label>Brightness (1–255)
             <input type="number" name="brightness" min="1" max="255" value="255" oninput="this.nextElementSibling.value=this.value"><input type="range" min="1" max="255" value="255" oninput="this.previousElementSibling.value=this.value">
           </label>
 
-          <label>Default Color
+          <label>Standby Color
             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
               <label>R <input type="number" name="r" min="0" max="255" value="196" oninput="this.nextElementSibling.value=this.value"><input type="range" min="0" max="255" value="196" oninput="this.previousElementSibling.value=this.value"></label>
               <label>G <input type="number" name="g" min="0" max="255" value="32" oninput="this.nextElementSibling.value=this.value"><input type="range" min="0" max="255" value="32" oninput="this.previousElementSibling.value=this.value"></label>
@@ -792,7 +846,7 @@ details summary[role="button"]:focus {
             </div>
           </label>
 
-          <label>Default Effect
+          <label>Standby Effect
             <select name="effect">
               <option value="0">Solid Color</option>
               <option value="1">Rainbow</option>
@@ -896,6 +950,11 @@ details summary[role="button"]:focus {
       </footer>
     </article>
   </dialog>
+  <aside id="output-preview-panel" class="output-preview-panel">
+    <div class="output-preview-title">Output preview</div>
+    <div id="output-preview-swatch" class="output-preview-swatch"></div>
+    <div id="output-preview-text" class="output-preview-text">Press a preview button to simulate output.</div>
+  </aside>
   <script>
       let scanInterval = 3500;
       let cfgDeviceArchitecture = "";
@@ -911,7 +970,7 @@ details summary[role="button"]:focus {
               console.log(`Loading module: ${scriptName}`);
 
               const script = document.createElement('script');
-              script.src = `/${scriptName}.js?v=0.0.4-quinled.9`;
+              script.src = `/${scriptName}.js?v=0.0.4-quinled.10`;
 
               script.onload = () => {
                   loadedScripts[scriptName] = true;
@@ -1352,10 +1411,91 @@ function toggleCalibration() {
 let activePreviewButton = null;
 let previewTimer = 0;
 
+const outputTuningDefaults = {
+    outputRed: 255,
+    outputGreen: 255,
+    outputBlue: 255,
+    outputWhite: 255,
+    outputRedToGreen: 0,
+    outputRedToBlue: 0,
+    outputGreenToRed: 0,
+    outputGreenToBlue: 0,
+    outputBlueToRed: 0,
+    outputBlueToGreen: 0
+};
+
 function clampChannelValue(value) {
     const parsed = parseInt(value, 10);
     if (isNaN(parsed)) return 0;
     return Math.max(0, Math.min(255, parsed));
+}
+
+function scaledChannel(value, gain) {
+    return clampChannelValue((Number(value || 0) * Number(gain || 0)) / 255);
+}
+
+function formatChannelValues(values) {
+    const [r, g, b, w] = values.map(clampChannelValue);
+    return `R ${r} / G ${g} / B ${b} / W ${w}`;
+}
+
+function updateOutputPreview(title, values, requestedValues = null) {
+    const swatch = document.getElementById('output-preview-swatch');
+    const text = document.getElementById('output-preview-text');
+    if (!swatch || !text) return;
+
+    const [r, g, b, w] = values.map(clampChannelValue);
+    const displayR = clampChannelValue(r + w);
+    const displayG = clampChannelValue(g + w);
+    const displayB = clampChannelValue(b + w);
+
+    swatch.style.background = `rgb(${displayR}, ${displayG}, ${displayB})`;
+    text.innerHTML = '';
+
+    const titleLine = document.createElement('div');
+    titleLine.className = 'output-preview-label';
+    titleLine.textContent = title;
+    text.appendChild(titleLine);
+
+    if (requestedValues) {
+        const requestLine = document.createElement('div');
+        requestLine.textContent = `Requested: ${formatChannelValues(requestedValues)}`;
+        text.appendChild(requestLine);
+    }
+
+    const outputLine = document.createElement('div');
+    outputLine.className = 'output-preview-output';
+    outputLine.textContent = `After tuning: ${formatChannelValues([r, g, b, w])}`;
+    text.appendChild(outputLine);
+}
+
+function updateCorrectedOutputPreview(params) {
+    const requested = [
+        params.get('r'),
+        params.get('g'),
+        params.get('b'),
+        params.get('w')
+    ];
+    let outR = scaledChannel(params.get('r'), params.get('outputRed')) +
+               scaledChannel(params.get('g'), params.get('outputGreenToRed')) +
+               scaledChannel(params.get('b'), params.get('outputBlueToRed'));
+    let outG = scaledChannel(params.get('g'), params.get('outputGreen')) +
+               scaledChannel(params.get('r'), params.get('outputRedToGreen')) +
+               scaledChannel(params.get('b'), params.get('outputBlueToGreen'));
+    let outB = scaledChannel(params.get('b'), params.get('outputBlue')) +
+               scaledChannel(params.get('r'), params.get('outputRedToBlue')) +
+               scaledChannel(params.get('g'), params.get('outputGreenToBlue'));
+    let outW = scaledChannel(params.get('w'), params.get('outputWhite'));
+
+    if (params.get('rgbToWhiteConversion') !== '0' && outW === 0) {
+        const sharedWhite = Math.min(outR, outG, outB);
+        outW = sharedWhite;
+        outR -= sharedWhite;
+        outG -= sharedWhite;
+        outB -= sharedWhite;
+    }
+
+    updateOutputPreview('Corrected preview', [outR, outG, outB, outW], requested);
 }
 
 function setTuningValue(name, value) {
@@ -1402,6 +1542,7 @@ async function sendCorrectedPreview(button) {
     body.set('b', button.dataset.b || '0');
     body.set('w', button.dataset.w || '0');
 
+    updateCorrectedOutputPreview(body);
     button.setAttribute('aria-busy', 'true');
     try {
         await fetch('/api/test_corrected_color', { method: 'POST', body });
@@ -1434,6 +1575,31 @@ function selectChannelTab(channel, shouldPreview) {
     }
 }
 
+function resetOutputTuning() {
+    for (const [name, value] of Object.entries(outputTuningDefaults)) {
+        setTuningValue(name, value);
+    }
+
+    const whiteMixer = document.querySelector('[name="rgbToWhiteConversion"]');
+    if (whiteMixer) {
+        whiteMixer.checked = false;
+    }
+
+    scheduleCorrectedPreview();
+}
+
+function saveSettingsForm() {
+    const form = document.querySelector('form[action="/save_config"]');
+    if (!form) return;
+
+    if (typeof form.requestSubmit === 'function') {
+        form.requestSubmit();
+    }
+    else {
+        form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    }
+}
+
 function setupTuningControls() {
     const initializedNames = new Set();
 
@@ -1453,6 +1619,8 @@ function setupTuningControls() {
     });
 
     document.querySelector('[name="rgbToWhiteConversion"]')?.addEventListener('change', scheduleCorrectedPreview);
+    document.getElementById('reset-output-tuning')?.addEventListener('click', resetOutputTuning);
+    document.getElementById('save-output-tuning')?.addEventListener('click', saveSettingsForm);
 
     document.querySelectorAll('[data-corrected-test]').forEach((button) => {
         button.addEventListener('click', async () => {
@@ -1493,6 +1661,12 @@ function setupCalibration(){
                 w: button.dataset.w || '0'
             });
 
+            updateOutputPreview('Raw preview', [
+                body.get('r'),
+                body.get('g'),
+                body.get('b'),
+                body.get('w')
+            ]);
             button.setAttribute('aria-busy', 'true');
             try {
                 await fetch('/api/test_color', { method: 'POST', body });
@@ -2005,10 +2179,15 @@ async function startManualOtaUpload() {
   };
 
   document.addEventListener("DOMContentLoaded", () => {
-    const hardware = document.querySelector('form[action="/save_config"] details');
+    const sections = document.querySelectorAll('form[action="/save_config"] details');
+    const hardware = sections[0];
+    const calibration = sections[1];
     setTimeout(() => {
       if (hardware && !hardware.open) {
         hardware.open = true;
+      }
+      if (calibration && !calibration.open) {
+        calibration.open = true;
       }
       window.loadSubScript("gpio", "setupPinValidator");
       window.loadSubScript("calibration", "setupCalibration");
