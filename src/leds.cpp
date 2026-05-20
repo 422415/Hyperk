@@ -259,6 +259,40 @@ namespace Leds{
         renderLed(true);
     }
 
+    void testCorrectedColor(uint8_t r, uint8_t g, uint8_t b, uint8_t w, const LedConfig::OutputCorrection& output)
+    {
+        tryWaitForRenderer();
+
+        r = scaleGain(r, output.red);
+        g = scaleGain(g, output.green);
+        b = scaleGain(b, output.blue);
+        w = scaleGain(w, output.white);
+
+        if (Config::cfg.led.type == LedType::SK6812 && output.rgbToWhite && w == 0)
+        {
+            const ColorRgbw converted = rgb2rgbw(r, g, b);
+            r = converted.R;
+            g = converted.G;
+            b = converted.B;
+            w = scaleGain(converted.W, output.white);
+        }
+
+        Volatile::setRelay(r || g || b || w);
+
+        for(int i = 0; i < getLedsNumber(); i++) {
+            if (Config::cfg.led.type == LedType::SK6812)
+            {
+                renderer.setLedRgbw(i, r, g, b, w);
+            }
+            else
+            {
+                renderer.setLedRgb(i, r, g, b);
+            }
+        }
+
+        renderLed(true);
+    }
+
     void checkDelayedRender()
     {
         if (delayedRender)

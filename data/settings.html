@@ -122,31 +122,61 @@
 
           <div id="outputCorrection" style="display: none;">
             <hr class="section-divider">
-            <h5>Output correction</h5>
-            <label>
-              <input type="checkbox" name="rgbToWhiteConversion" role="switch" checked>
-              Convert RGB input to white channel
+            <h5>Color tuning</h5>
+            <div class="tuning-actions">
+              <button type="button" class="secondary" data-tuning-preset="anime">Anime</button>
+              <button type="button" class="secondary" data-tuning-preset="neutral">Neutral</button>
+              <button type="button" class="secondary" data-tuning-preset="reset">Reset</button>
+            </div>
+            <div class="tuning-grid">
+              <label>Red
+                <input type="range" min="0" max="255" value="255" data-tuning-range="outputRed">
+                <input type="number" name="outputRed" min="0" max="255" value="255" data-tuning-number="outputRed">
+              </label>
+              <label>Green
+                <input type="range" min="0" max="255" value="255" data-tuning-range="outputGreen">
+                <input type="number" name="outputGreen" min="0" max="255" value="255" data-tuning-number="outputGreen">
+              </label>
+              <label>Blue
+                <input type="range" min="0" max="255" value="255" data-tuning-range="outputBlue">
+                <input type="number" name="outputBlue" min="0" max="255" value="255" data-tuning-number="outputBlue">
+              </label>
+              <label>White
+                <input type="range" min="0" max="255" value="255" data-tuning-range="outputWhite">
+                <input type="number" name="outputWhite" min="0" max="255" value="255" data-tuning-number="outputWhite">
+              </label>
+            </div>
+            <label class="white-mixer-control">
+              <input type="checkbox" name="rgbToWhiteConversion" role="switch">
+              White mixer
             </label>
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1rem;">
-              <label>Red gain <input type="number" name="outputRed" min="0" max="255" value="255"></label>
-              <label>Green gain <input type="number" name="outputGreen" min="0" max="255" value="255"></label>
-              <label>Blue gain <input type="number" name="outputBlue" min="0" max="255" value="255"></label>
-              <label>White gain <input type="number" name="outputWhite" min="0" max="255" value="255"></label>
+            <h5>Preview</h5>
+            <div class="test-grid">
+              <button type="button" data-corrected-test data-r="160" data-g="0" data-b="0" data-w="0">Red</button>
+              <button type="button" data-corrected-test data-r="0" data-g="160" data-b="0" data-w="0">Green</button>
+              <button type="button" data-corrected-test data-r="0" data-g="0" data-b="160" data-w="0">Blue</button>
+              <button type="button" data-corrected-test data-r="160" data-g="160" data-b="0" data-w="0">Yellow</button>
+              <button type="button" data-corrected-test data-r="0" data-g="160" data-b="160" data-w="0">Cyan</button>
+              <button type="button" data-corrected-test data-r="160" data-g="0" data-b="160" data-w="0">Magenta</button>
+              <button type="button" data-corrected-test data-r="160" data-g="160" data-b="160" data-w="0">White</button>
+              <button type="button" data-corrected-test data-r="160" data-g="100" data-b="40" data-w="0">Skin</button>
+              <button type="button" data-corrected-test data-r="160" data-g="55" data-b="0" data-w="0">Orange</button>
+              <button type="button" data-corrected-test data-r="0" data-g="0" data-b="0" data-w="0">Off</button>
             </div>
-            <h5>Raw channel test</h5>
-            <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.5rem;">
-              <button type="button" data-raw-test data-r="128" data-g="0" data-b="0" data-w="0">R</button>
-              <button type="button" data-raw-test data-r="0" data-g="128" data-b="0" data-w="0">G</button>
-              <button type="button" data-raw-test data-r="0" data-g="0" data-b="128" data-w="0">B</button>
-              <button type="button" data-raw-test data-r="0" data-g="0" data-b="0" data-w="128">W</button>
-              <button type="button" data-raw-test data-r="128" data-g="128" data-b="0" data-w="0">Y</button>
-              <button type="button" data-raw-test data-r="0" data-g="128" data-b="128" data-w="0">C</button>
-              <button type="button" data-raw-test data-r="128" data-g="0" data-b="128" data-w="0">M</button>
-              <button type="button" data-raw-test data-r="128" data-g="128" data-b="128" data-w="0">RGB</button>
-              <button type="button" data-raw-test data-r="128" data-g="80" data-b="32" data-w="0">Skin</button>
-              <button type="button" data-raw-test data-r="128" data-g="40" data-b="0" data-w="0">Orange</button>
-              <button type="button" data-raw-test data-r="0" data-g="0" data-b="0" data-w="0">Off</button>
-            </div>
+            <details class="raw-test-panel">
+              <summary>Raw channel test</summary>
+              <div class="test-grid">
+                <button type="button" data-raw-test data-r="128" data-g="0" data-b="0" data-w="0">R</button>
+                <button type="button" data-raw-test data-r="0" data-g="128" data-b="0" data-w="0">G</button>
+                <button type="button" data-raw-test data-r="0" data-g="0" data-b="128" data-w="0">B</button>
+                <button type="button" data-raw-test data-r="0" data-g="0" data-b="0" data-w="128">W</button>
+                <button type="button" data-raw-test data-r="128" data-g="128" data-b="0" data-w="0">Y</button>
+                <button type="button" data-raw-test data-r="0" data-g="128" data-b="128" data-w="0">C</button>
+                <button type="button" data-raw-test data-r="128" data-g="0" data-b="128" data-w="0">M</button>
+                <button type="button" data-raw-test data-r="128" data-g="128" data-b="128" data-w="0">RGB</button>
+                <button type="button" data-raw-test data-r="0" data-g="0" data-b="0" data-w="0">Off</button>
+              </div>
+            </details>
           </div>
         </div>
       </details>

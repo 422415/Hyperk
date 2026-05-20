@@ -312,6 +312,45 @@ void setupWebServer(AsyncWebServer& server) {
         request->send(200, mime_application_json, "{\"status\":\"ok\"}");
     });
 
+    // Corrected RGBW test using current unsaved tuning values
+    server.on("/api/test_corrected_color", HTTP_POST, [](AsyncWebServerRequest *request) {
+        auto readChannel = [request](const char* name) -> uint8_t {
+            if (!request->hasParam(name, true)) {
+                return 0;
+            }
+            return constrain(request->getParam(name, true)->value().toInt(), 0, 255);
+        };
+
+        auto readGain = [request](const char* name, uint8_t fallback) -> uint8_t {
+            if (!request->hasParam(name, true)) {
+                return fallback;
+            }
+            return constrain(request->getParam(name, true)->value().toInt(), 0, 255);
+        };
+
+        const uint8_t r = readChannel("r");
+        const uint8_t g = readChannel("g");
+        const uint8_t b = readChannel("b");
+        const uint8_t w = readChannel("w");
+
+        if (Config::cfg.led.type != LedType::SK6812 && w > 0) {
+            request->send(400, mime_application_json, "{\"status\":\"unsupported\"}");
+            return;
+        }
+
+        LedConfig::OutputCorrection output = Config::cfg.led.output;
+        output.red = readGain("outputRed", output.red);
+        output.green = readGain("outputGreen", output.green);
+        output.blue = readGain("outputBlue", output.blue);
+        output.white = readGain("outputWhite", output.white);
+        if (request->hasParam("rgbToWhiteConversion", true)) {
+            output.rgbToWhite = request->getParam("rgbToWhiteConversion", true)->value().toInt() != 0;
+        }
+
+        Leds::testCorrectedColor(r, g, b, w, output);
+        request->send(200, mime_application_json, "{\"status\":\"ok\"}");
+    });
+
     // Current config
     server.on("/api/get_current_config", HTTP_GET, [](AsyncWebServerRequest *request) {        
         AsyncResponseStream *response = request->beginResponseStream(mime_application_json);                

@@ -163,3 +163,61 @@ details summary[role="button"]:focus {
   margin-bottom: 1rem;
   border-radius: var(--pico-border-radius);
 }
+
+.tuning-actions,
+.test-grid {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.tuning-actions {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 1rem;
+}
+
+.tuning-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.tuning-grid input[type="number"] {
+  margin-top: 0.35rem;
+}
+
+.white-mixer-control {
+  margin-top: 0.75rem;
+}
+
+.test-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  margin-bottom: 1rem;
+}
+
+.test-grid button {
+  margin-bottom: 0;
+}
+
+.test-grid button.active-preview {
+  outline: 2px solid #eab308;
+  outline-offset: 2px;
+}
+
+.raw-test-panel {
+  margin-top: 0.25rem;
+}
+
+.raw-test-panel summary {
+  cursor: pointer;
+}
+
+@media (max-width: 720px) {
+  .tuning-actions,
+  .tuning-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .test-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
