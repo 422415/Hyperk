@@ -303,6 +303,20 @@ details summary[role="button"]:focus {
   font-weight: 700;
 }
 
+.output-preview-swatches {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.output-preview-swatch-label {
+  margin-bottom: 0.25rem;
+  color: var(--pico-muted-color);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
 .output-preview-swatch {
   height: 3rem;
   border: 1px solid var(--pico-form-element-border-color);
@@ -311,7 +325,7 @@ details summary[role="button"]:focus {
 }
 
 .output-preview-text {
-  margin-top: 0.5rem;
+  margin-top: 0.6rem;
   color: var(--pico-muted-color);
   font-size: 0.85rem;
 }

@@ -104,17 +104,27 @@ MOCK_SCRIPT = r"""
     return `R ${r} / G ${g} / B ${b} / W ${w}`;
   }
 
+  function displayColor(values) {
+    const [r, g, b, w] = values.map(clamp);
+    return [clamp(r + w), clamp(g + w), clamp(b + w)];
+  }
+
+  function setSwatchColor(swatch, values) {
+    const [r, g, b] = displayColor(values);
+    swatch.style.background = `rgb(${r}, ${g}, ${b})`;
+  }
+
   function updatePreview(title, values, requestedValues = null) {
-    const swatch = document.getElementById("output-preview-swatch");
+    const referenceSwatch = document.getElementById("output-reference-swatch");
+    const outputSwatch = document.getElementById("output-preview-swatch");
     const text = document.getElementById("output-preview-text");
-    if (!swatch || !text) return;
+    if (!referenceSwatch || !outputSwatch || !text) return;
 
     const [r, g, b, w] = values.map(clamp);
-    const displayR = clamp(r + w);
-    const displayG = clamp(g + w);
-    const displayB = clamp(b + w);
+    const referenceValues = requestedValues || values;
 
-    swatch.style.background = `rgb(${displayR}, ${displayG}, ${displayB})`;
+    setSwatchColor(referenceSwatch, referenceValues);
+    setSwatchColor(outputSwatch, [r, g, b, w]);
     text.innerHTML = "";
 
     const titleLine = document.createElement("div");
@@ -122,11 +132,9 @@ MOCK_SCRIPT = r"""
     titleLine.textContent = title;
     text.appendChild(titleLine);
 
-    if (requestedValues) {
-      const requestLine = document.createElement("div");
-      requestLine.textContent = `Requested: ${formatChannelValues(requestedValues)}`;
-      text.appendChild(requestLine);
-    }
+    const requestLine = document.createElement("div");
+    requestLine.textContent = `Screen reference: ${formatChannelValues(referenceValues)}`;
+    text.appendChild(requestLine);
 
     const outputLine = document.createElement("div");
     outputLine.className = "output-preview-output";
@@ -225,7 +233,7 @@ MOCK_SCRIPT = r"""
         tag_name: demoConfig.version,
         prerelease: false,
         assets: [{
-          name: "OTA_Hyperk_0.0.4-quinled.9_esp32-wled-esp32-ota-quinled-rgbw.bin",
+          name: "OTA_Hyperk_0.0.4-quinled.11_esp32-wled-esp32-ota-quinled-rgbw.bin",
           browser_download_url: "https://example.invalid/demo.bin"
         }]
       }]);

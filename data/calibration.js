@@ -56,17 +56,31 @@ function formatChannelValues(values) {
     return `R ${r} / G ${g} / B ${b} / W ${w}`;
 }
 
+function displayColorFromChannels(values) {
+    const [r, g, b, w] = values.map(clampChannelValue);
+    return [
+        clampChannelValue(r + w),
+        clampChannelValue(g + w),
+        clampChannelValue(b + w)
+    ];
+}
+
+function setSwatchColor(swatch, values) {
+    const [displayR, displayG, displayB] = displayColorFromChannels(values);
+    swatch.style.background = `rgb(${displayR}, ${displayG}, ${displayB})`;
+}
+
 function updateOutputPreview(title, values, requestedValues = null) {
-    const swatch = document.getElementById('output-preview-swatch');
+    const referenceSwatch = document.getElementById('output-reference-swatch');
+    const outputSwatch = document.getElementById('output-preview-swatch');
     const text = document.getElementById('output-preview-text');
-    if (!swatch || !text) return;
+    if (!referenceSwatch || !outputSwatch || !text) return;
 
     const [r, g, b, w] = values.map(clampChannelValue);
-    const displayR = clampChannelValue(r + w);
-    const displayG = clampChannelValue(g + w);
-    const displayB = clampChannelValue(b + w);
+    const referenceValues = requestedValues || values;
 
-    swatch.style.background = `rgb(${displayR}, ${displayG}, ${displayB})`;
+    setSwatchColor(referenceSwatch, referenceValues);
+    setSwatchColor(outputSwatch, [r, g, b, w]);
     text.innerHTML = '';
 
     const titleLine = document.createElement('div');
@@ -74,11 +88,9 @@ function updateOutputPreview(title, values, requestedValues = null) {
     titleLine.textContent = title;
     text.appendChild(titleLine);
 
-    if (requestedValues) {
-        const requestLine = document.createElement('div');
-        requestLine.textContent = `Requested: ${formatChannelValues(requestedValues)}`;
-        text.appendChild(requestLine);
-    }
+    const requestLine = document.createElement('div');
+    requestLine.textContent = `Screen reference: ${formatChannelValues(referenceValues)}`;
+    text.appendChild(requestLine);
 
     const outputLine = document.createElement('div');
     outputLine.className = 'output-preview-output';
