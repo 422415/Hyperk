@@ -100,21 +100,21 @@ function updateOutputPreview(title, values, requestedValues = null) {
 
 function updateCorrectedOutputPreview(params) {
     const requested = [
-        params.get('r'),
-        params.get('g'),
-        params.get('b'),
-        params.get('w')
+        params.get('referenceR') ?? params.get('r'),
+        params.get('referenceG') ?? params.get('g'),
+        params.get('referenceB') ?? params.get('b'),
+        params.get('referenceW') ?? params.get('w')
     ];
-    let outR = scaledChannel(params.get('r'), params.get('outputRed')) +
-               scaledChannel(params.get('g'), params.get('outputGreenToRed')) +
-               scaledChannel(params.get('b'), params.get('outputBlueToRed'));
-    let outG = scaledChannel(params.get('g'), params.get('outputGreen')) +
-               scaledChannel(params.get('r'), params.get('outputRedToGreen')) +
-               scaledChannel(params.get('b'), params.get('outputBlueToGreen'));
-    let outB = scaledChannel(params.get('b'), params.get('outputBlue')) +
-               scaledChannel(params.get('r'), params.get('outputRedToBlue')) +
-               scaledChannel(params.get('g'), params.get('outputGreenToBlue'));
-    let outW = scaledChannel(params.get('w'), params.get('outputWhite'));
+    let outR = scaledChannel(requested[0], params.get('outputRed')) +
+               scaledChannel(requested[1], params.get('outputGreenToRed')) +
+               scaledChannel(requested[2], params.get('outputBlueToRed'));
+    let outG = scaledChannel(requested[1], params.get('outputGreen')) +
+               scaledChannel(requested[0], params.get('outputRedToGreen')) +
+               scaledChannel(requested[2], params.get('outputBlueToGreen'));
+    let outB = scaledChannel(requested[2], params.get('outputBlue')) +
+               scaledChannel(requested[0], params.get('outputRedToBlue')) +
+               scaledChannel(requested[1], params.get('outputGreenToBlue'));
+    let outW = scaledChannel(requested[3], params.get('outputWhite'));
 
     if (params.get('rgbToWhiteConversion') !== '0' && outW === 0) {
         const sharedWhite = Math.min(outR, outG, outB);
@@ -170,6 +170,10 @@ async function sendCorrectedPreview(button) {
     body.set('g', button.dataset.g || '0');
     body.set('b', button.dataset.b || '0');
     body.set('w', button.dataset.w || '0');
+    body.set('referenceR', button.dataset.referenceR || button.dataset.r || '0');
+    body.set('referenceG', button.dataset.referenceG || button.dataset.g || '0');
+    body.set('referenceB', button.dataset.referenceB || button.dataset.b || '0');
+    body.set('referenceW', button.dataset.referenceW || button.dataset.w || '0');
 
     updateCorrectedOutputPreview(body);
     button.setAttribute('aria-busy', 'true');

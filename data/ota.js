@@ -6,6 +6,7 @@ let remoteV = "";
 let updateCase = null;
 let isUpdating = false;
 let resolveConfirm;
+const releasesApiUrl = "https://api.github.com/repos/422415/Hyperk/releases";
 
 function customConfirm(msg) {
     const modal = document.getElementById('confirm-modal');
@@ -56,15 +57,15 @@ async function checkFirmwareUpdates() {
 
     let releases;
     try {
-        let res = await fetch("https://hyperk-github-releases-api-proxy.hyperhdr.workers.dev/");
-        if (!res.ok) throw new Error(`Worker status: ${res.status}`);                
+        let res = await fetch(releasesApiUrl);
+        if (!res.ok) throw new Error(`GitHub API status: ${res.status}`);
         console.log("✅ Data from Worker Proxy");
         releases = await res.json();
     } 
     catch (err) {
         console.warn("⚠️ Worker failed, falling back to GitHub API...", err);
         try {
-            let res = await fetch("https://api.github.com/repos/awawa-dev/Hyperk/releases");
+            let res = await fetch(releasesApiUrl);
             if (!res.ok) throw new Error(`GitHub API status: ${res.status}`);
             releases = await res.json();
         } catch (e) {
@@ -316,4 +317,37 @@ async function startManualOtaUpload() {
     };
 
     xhr.send(formData);
+}
+
+async function startFactoryReset() {
+    const confirmed = await customConfirm("Factory reset Hyperk and wipe all saved settings?");
+    if (!confirmed) return;
+
+    isUpdating = true;
+    const statusArea = document.getElementById('ota_status_area');
+    const statusText = document.getElementById('ota_status_text');
+    const progress = document.getElementById('ota_progress');
+    const installBtn = document.getElementById('install_update_btn');
+    const checkBtn = document.getElementById('check_update_btn');
+    const resetBtn = document.getElementById('factory_reset_btn');
+
+    if (statusArea) statusArea.style.display = 'block';
+    if (progress) progress.style.display = 'none';
+    if (installBtn) installBtn.style.display = 'none';
+    if (checkBtn) checkBtn.disabled = true;
+    if (resetBtn) resetBtn.disabled = true;
+    if (statusText) statusText.innerText = "Wiping settings...";
+
+    try {
+        const res = await fetch('/api/factory_reset', { method: 'POST' });
+        if (!res.ok) throw new Error(`Reset failed: ${res.status}`);
+        if (statusText) statusText.innerText = "Factory reset complete. Rebooting...";
+        showToast(true);
+    }
+    catch (err) {
+        isUpdating = false;
+        if (statusText) statusText.innerText = `Factory reset failed: ${err.message}`;
+        if (checkBtn) checkBtn.disabled = false;
+        if (resetBtn) resetBtn.disabled = false;
+    }
 }

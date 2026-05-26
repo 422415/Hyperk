@@ -1,4 +1,4 @@
-name: PlatformIO Build All
+name: PlatformIO Build ClassicESP
 
 on:
   push:
@@ -6,32 +6,10 @@ on:
 
 jobs:
   build:
-    name: "${{ matrix.group }}"
+    name: ClassicESP
     runs-on: ubuntu-latest
     permissions:
       contents: read
-
-    strategy:
-      matrix:
-        include:
-          - group: ModernESP_C2
-            boards: "esp32c2"
-            cache_extra: ".pio"
-          - group: ModernESP_C3_C5_C6
-            boards: "esp32c3 esp32c5 esp32c6"
-            cache_extra: ""
-          - group: ModernESP_S3
-            boards: "esp32s3"
-            cache_extra: ""
-          - group: ClassicESP
-            boards: "esp32 esp32-wled-esp32-ota-quinled-rgbw esp32-quinled-dig-uno-v3-wled-ota esp32-quinled-dig-uno-v3-aeplus-wled-ota esp32-quinled-dig-uno-ar-wled-ota esp32-quinled-dig-uno-aeplus-ar-wled-ota esp32s2 esp32-eth01 esp8266"
-            cache_extra: ""
-          - group: CustomBoards
-            boards: "esp32-GLEDOPTO_GL_C_616WL esp32-GLEDOPTO_GL_C_615WL esp32-DOMRAEM_WLE_ADM esp32-IOTORERO_ETHERNET"
-            cache_extra: "" 
-          - group: Pico
-            boards: "pico pico2"
-            cache_extra: ""
 
     steps:
       - name: Checkout code
@@ -42,17 +20,16 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: "Cache PlatformIO - ${{ matrix.group }}"
+      - name: Cache PlatformIO - ClassicESP
         uses: actions/cache@v5
         with:
           path: |
             ~/.platformio/packages
             ~/.platformio/platforms
             .ccache
-            ${{ matrix.cache_extra }}
-          key: pio-${{ matrix.group }}-${{ hashFiles('platformio.ini') }}
+          key: pio-ClassicESP-${{ hashFiles('platformio.ini') }}
           restore-keys: |
-            pio-${{ matrix.group }}-
+            pio-ClassicESP-
 
       - name: Install PlatformIO + esptool + ccache
         run: |
@@ -61,25 +38,25 @@ jobs:
           python -m pip install --upgrade pip
           pip install --upgrade platformio esptool
 
-      - name: Build ${{ matrix.group }}
+      - name: Build ClassicESP
         run: |
-          ENVS="${{ matrix.boards }}"
+          ENVS="esp32 esp32-wled-esp32-ota-quinled-rgbw esp32-quinled-dig-uno-v3-wled-ota esp32-quinled-dig-uno-v3-aeplus-wled-ota esp32-quinled-dig-uno-ar-wled-ota esp32-quinled-dig-uno-aeplus-ar-wled-ota esp32s2 esp32-eth01 esp8266"
           CMD="pio run -j 2"
           for env in $ENVS; do
             CMD="$CMD -e $env"
           done
           eval "$CMD"
 
-      - name: "Upload Artifacts - ${{ matrix.group }}"
+      - name: Upload Artifacts - ClassicESP
         uses: actions/upload-artifact@v7
         with:
-          name: Hyperk-Firmware-${{ matrix.group }}
+          name: Hyperk-Firmware-ClassicESP
           path: release/
           if-no-files-found: error
 
       - name: Generate Job Summary
         run: |
-          echo "**Boards:** ${{ matrix.boards }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Boards:** esp32 esp32-wled-esp32-ota-quinled-rgbw esp32-quinled-dig-uno-v3-wled-ota esp32-quinled-dig-uno-v3-aeplus-wled-ota esp32-quinled-dig-uno-ar-wled-ota esp32-quinled-dig-uno-aeplus-ar-wled-ota esp32s2 esp32-eth01 esp8266" >> $GITHUB_STEP_SUMMARY
 
   release:
     needs: build
@@ -89,12 +66,11 @@ jobs:
       contents: write
 
     steps:
-      - name: Download all firmware artifacts
+      - name: Download firmware artifact
         uses: actions/download-artifact@v8
         with:
-          pattern: Hyperk-Firmware-*
+          name: Hyperk-Firmware-ClassicESP
           path: release
-          merge-multiple: true
 
       - name: Create Pre-release
         uses: softprops/action-gh-release@v3

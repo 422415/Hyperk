@@ -131,6 +131,7 @@ struct LedConfig {
     uint16_t numLeds    = HYPERK_DEFAULT_LED_COUNT;
     uint8_t  brightness = 255;
     uint8_t  r = 196, g = 32, b = 8;
+    bool     standbyOff = false;
     OutputCorrection output;
     uint8_t  effect     = 0;
 

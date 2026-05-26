@@ -298,9 +298,33 @@ details summary[role="button"]:focus {
   box-shadow: 0 0.75rem 2rem rgba(0, 0, 0, 0.35);
 }
 
-.output-preview-title {
+.output-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 0.5rem;
+  gap: 0.75rem;
+  cursor: move;
+  touch-action: none;
+}
+
+.output-preview-title {
   font-weight: 700;
+}
+
+.output-preview-toggle {
+  width: auto;
+  margin: 0;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+}
+
+.output-preview-panel.is-collapsed .output-preview-content {
+  display: none;
+}
+
+.output-preview-panel.is-collapsed .output-preview-header {
+  margin-bottom: 0;
 }
 
 .output-preview-swatches {
@@ -368,5 +392,9 @@ details summary[role="button"]:focus {
     position: static;
     width: auto;
     margin: 1rem;
+  }
+
+  .output-preview-header {
+    cursor: default;
   }
 }

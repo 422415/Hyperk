@@ -179,12 +179,16 @@ namespace Leds{
     void applyLedConfig()
     {
         const AppConfig& cfg = Config::cfg;
+        const bool standbyOn = !cfg.led.standbyOff && (cfg.led.r || cfg.led.g || cfg.led.b);
+        const uint8_t standbyR = cfg.led.standbyOff ? 0 : cfg.led.r;
+        const uint8_t standbyG = cfg.led.standbyOff ? 0 : cfg.led.g;
+        const uint8_t standbyB = cfg.led.standbyOff ? 0 : cfg.led.b;
 
-        Volatile::setRelay(cfg.led.r || cfg.led.g || cfg.led.b);
+        Volatile::setRelay(standbyOn);
         initLEDs(cfg.led.type, cfg.led.numLeds, cfg.led.segments, cfg.led.calibration.gain, cfg.led.calibration.red, cfg.led.calibration.green, cfg.led.calibration.blue);
         Volatile::updateBrightness(cfg.led.brightness);
-        Volatile::updatePowerOn(cfg.led.r || cfg.led.g || cfg.led.b);
-        Volatile::updateStaticColor(cfg.led.r, cfg.led.g, cfg.led.b);
+        Volatile::updatePowerOn(standbyOn);
+        Volatile::updateStaticColor(standbyR, standbyG, standbyB);
     }
 
     inline uint8_t scaleGain(uint8_t v, uint8_t gain)

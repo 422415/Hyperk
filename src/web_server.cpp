@@ -43,6 +43,7 @@
 #include "utils.h"
 #include "leds.h"
 #include "manager.h"
+#include "storage.h"
 #include "mdns_service.h"
 #include "web_resources.h"
 #include "uni_json_api.h"
@@ -156,6 +157,17 @@ void setupWebServer(AsyncWebServer& server) {
         }
     });
 
+    server.on("/api/factory_reset", HTTP_POST, [](AsyncWebServerRequest *request) {
+        if (!Storage::factoryReset()) {
+            request->send(500, mime_application_json, "{\"status\":\"error\"}");
+            return;
+        }
+
+        request->send(200, mime_application_json, "{\"status\":\"reboot\"}");
+        Log::debug("Factory reset requested. Rebooting in 1s...");
+        managerScheduleReboot(1000);
+    });
+
     // Save settings
     server.on("/save_config", HTTP_POST, [](AsyncWebServerRequest *request) {
         AppConfig cfg = Config::cfg;
@@ -235,6 +247,7 @@ void setupWebServer(AsyncWebServer& server) {
         if (request->hasParam("r", true)) cfg.led.r = constrain(request->getParam("r", true)->value().toInt(), 0, 255);
         if (request->hasParam("g", true)) cfg.led.g = constrain(request->getParam("g", true)->value().toInt(), 0, 255);
         if (request->hasParam("b", true)) cfg.led.b = constrain(request->getParam("b", true)->value().toInt(), 0, 255);
+        cfg.led.standbyOff = request->hasParam("standbyOff", true);
         if (request->hasParam("effect", true)) cfg.led.effect = request->getParam("effect", true)->value().toInt();
 
         if (request->hasParam("calGain", true)) cfg.led.calibration.gain = constrain(request->getParam("calGain", true)->value().toInt(), 0, 255);
@@ -407,6 +420,7 @@ void setupWebServer(AsyncWebServer& server) {
         led["r"]          = cfg.led.r;
         led["g"]          = cfg.led.g;
         led["b"]          = cfg.led.b;
+        led["standbyOff"] = cfg.led.standbyOff;
         led["effect"]     = cfg.led.effect;
 
         led["deviceName"]   = cfg.deviceName;

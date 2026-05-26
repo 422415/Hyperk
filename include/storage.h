@@ -6,4 +6,5 @@
 namespace Storage {
     bool loadConfig(AppConfig& cfg);
     bool saveConfig(const AppConfig& cfg);
+    bool factoryReset();
 };

@@ -27,6 +27,7 @@ DEMO_CONFIG = {
     "r": 255,
     "g": 255,
     "b": 0,
+    "standbyOff": False,
     "effect": 0,
     "deviceName": "hyperk-demo",
     "extraMdnsTag": "wled",
@@ -144,10 +145,10 @@ MOCK_SCRIPT = r"""
 
   async function handleCorrectedPreview(init) {
     const p = await paramsFromBody(init);
-    const r = Number(p.get("r") || 0);
-    const g = Number(p.get("g") || 0);
-    const b = Number(p.get("b") || 0);
-    const w = Number(p.get("w") || 0);
+    const r = Number(p.get("referenceR") || p.get("r") || 0);
+    const g = Number(p.get("referenceG") || p.get("g") || 0);
+    const b = Number(p.get("referenceB") || p.get("b") || 0);
+    const w = Number(p.get("referenceW") || p.get("w") || 0);
 
     let outR = scaled(r, p.get("outputRed")) +
                scaled(g, p.get("outputGreenToRed")) +
@@ -227,13 +228,15 @@ MOCK_SCRIPT = r"""
     if (isPath(path, "/ota")) {
       return textResponse("DEMO OTA OK");
     }
-    if (raw.includes("hyperk-github-releases-api-proxy") ||
-        raw.includes("api.github.com/repos/awawa-dev/Hyperk/releases")) {
+    if (isPath(path, "/api/factory_reset")) {
+      return jsonResponse({ status: "reboot" });
+    }
+    if (raw.includes("api.github.com/repos/422415/Hyperk/releases")) {
       return jsonResponse([{
         tag_name: demoConfig.version,
         prerelease: false,
         assets: [{
-          name: "OTA_Hyperk_0.0.4-quinled.11_esp32-wled-esp32-ota-quinled-rgbw.bin",
+          name: "OTA_Hyperk_0.0.4-quinled.12_esp32-wled-esp32-ota-quinled-rgbw.bin",
           browser_download_url: "https://example.invalid/demo.bin"
         }]
       }]);

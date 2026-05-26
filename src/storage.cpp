@@ -78,6 +78,7 @@ namespace Storage {
         cfg.led.r          = doc["led"]["r"] | 196;
         cfg.led.g          = doc["led"]["g"] | 32;
         cfg.led.b          = doc["led"]["b"] | 8;
+        cfg.led.standbyOff = doc["led"]["standbyOff"] | false;
         cfg.led.effect     = doc["led"]["effect"] | 0;
 
         cfg.led.output.red        = doc["output"]["red"]        | cfg.led.output.red;
@@ -123,6 +124,7 @@ namespace Storage {
         doc["led"]["r"]          = cfg.led.r;
         doc["led"]["g"]          = cfg.led.g;
         doc["led"]["b"]          = cfg.led.b;
+        doc["led"]["standbyOff"] = cfg.led.standbyOff;
         doc["led"]["effect"]     = cfg.led.effect;
 
         doc["output"]["red"]        = cfg.led.output.red;
@@ -153,6 +155,14 @@ namespace Storage {
             serializeJson(doc, output);
             Log::debug("Saving config: ", output);
         #endif
+
+        return true;
+    }
+
+    bool factoryReset() {
+        if (LittleFS.exists(CONFIG_FILE)) {
+            return LittleFS.remove(CONFIG_FILE);
+        }
 
         return true;
     }

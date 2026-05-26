@@ -204,18 +204,18 @@
             </div>
             <h5>Preview physical channels</h5>
             <div class="test-grid">
-              <button type="button" data-preview-channel="red" data-corrected-test data-r="160" data-g="0" data-b="0" data-w="0">Red</button>
-              <button type="button" data-preview-channel="green" data-corrected-test data-r="0" data-g="160" data-b="0" data-w="0">Green</button>
-              <button type="button" data-preview-channel="blue" data-corrected-test data-r="0" data-g="0" data-b="160" data-w="0">Blue</button>
-              <button type="button" data-preview-channel="white" data-corrected-test data-r="0" data-g="0" data-b="0" data-w="160">White LED</button>
-              <button type="button" data-corrected-test data-r="0" data-g="0" data-b="0" data-w="0">Off</button>
+              <button type="button" data-preview-channel="red" data-corrected-test data-r="160" data-g="0" data-b="0" data-w="0" data-reference-r="255" data-reference-g="0" data-reference-b="0" data-reference-w="0">Red</button>
+              <button type="button" data-preview-channel="green" data-corrected-test data-r="0" data-g="160" data-b="0" data-w="0" data-reference-r="0" data-reference-g="255" data-reference-b="0" data-reference-w="0">Green</button>
+              <button type="button" data-preview-channel="blue" data-corrected-test data-r="0" data-g="0" data-b="160" data-w="0" data-reference-r="0" data-reference-g="0" data-reference-b="255" data-reference-w="0">Blue</button>
+              <button type="button" data-preview-channel="white" data-corrected-test data-r="0" data-g="0" data-b="0" data-w="160" data-reference-r="0" data-reference-g="0" data-reference-b="0" data-reference-w="255">White LED</button>
+              <button type="button" data-corrected-test data-r="0" data-g="0" data-b="0" data-w="0" data-reference-r="0" data-reference-g="0" data-reference-b="0" data-reference-w="0">Off</button>
             </div>
             <h5>Verify mixed colors</h5>
             <div class="test-grid">
-              <button type="button" data-corrected-test data-r="160" data-g="160" data-b="0" data-w="0">Yellow</button>
-              <button type="button" data-corrected-test data-r="0" data-g="160" data-b="160" data-w="0">Cyan</button>
-              <button type="button" data-corrected-test data-r="160" data-g="0" data-b="160" data-w="0">Magenta</button>
-              <button type="button" data-corrected-test data-r="160" data-g="160" data-b="160" data-w="0">RGB White</button>
+              <button type="button" data-corrected-test data-r="160" data-g="160" data-b="0" data-w="0" data-reference-r="255" data-reference-g="255" data-reference-b="0" data-reference-w="0">Yellow</button>
+              <button type="button" data-corrected-test data-r="0" data-g="160" data-b="160" data-w="0" data-reference-r="0" data-reference-g="255" data-reference-b="255" data-reference-w="0">Cyan</button>
+              <button type="button" data-corrected-test data-r="160" data-g="0" data-b="160" data-w="0" data-reference-r="255" data-reference-g="0" data-reference-b="255" data-reference-w="0">Magenta</button>
+              <button type="button" data-corrected-test data-r="160" data-g="160" data-b="160" data-w="0" data-reference-r="255" data-reference-g="255" data-reference-b="255" data-reference-w="0">RGB White</button>
             </div>
             <details class="raw-test-panel">
               <summary>Raw channel test</summary>
@@ -234,6 +234,11 @@
       <details>
         <summary role="button" class="outline secondary">Standby Light State</summary>
         <div>
+          <label>
+            <input type="checkbox" name="standbyOff" role="switch" id="standby-off-toggle">
+            Standby / connection lost light off
+          </label>
+
           <label>Brightness (1–255)
             <input type="number" name="brightness" min="1" max="255" value="255" oninput="this.nextElementSibling.value=this.value"><input type="range" min="1" max="255" value="255" oninput="this.previousElementSibling.value=this.value">
           </label>
@@ -319,6 +324,13 @@
             </small>
           </div>
 
+          <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--pico-form-element-border-color);">
+            <label style="margin-bottom: 0.5rem; display: block;">Factory reset</label>
+            <button type="button" id="factory_reset_btn" class="contrast outline" onclick="startFactoryReset()">
+              Wipe Settings
+            </button>
+          </div>
+
           <div class="ota-footer">
             <a href="https://awawa-dev.github.io/hyperk/privacy.html" target="_blank">Privacy Policy</a>
           </div>
@@ -351,18 +363,23 @@
     </article>
   </dialog>
   <aside id="output-preview-panel" class="output-preview-panel">
-    <div class="output-preview-title">Output preview</div>
-    <div class="output-preview-swatches">
-      <div>
-        <div class="output-preview-swatch-label">Screen reference</div>
-        <div id="output-reference-swatch" class="output-preview-swatch"></div>
-      </div>
-      <div>
-        <div class="output-preview-swatch-label">After tuning</div>
-        <div id="output-preview-swatch" class="output-preview-swatch"></div>
-      </div>
+    <div id="output-preview-header" class="output-preview-header">
+      <div class="output-preview-title">Output preview</div>
+      <button type="button" id="output-preview-toggle" class="output-preview-toggle" aria-expanded="true">Hide</button>
     </div>
-    <div id="output-preview-text" class="output-preview-text">Press a preview button to simulate output.</div>
+    <div id="output-preview-content" class="output-preview-content">
+      <div class="output-preview-swatches">
+        <div>
+          <div class="output-preview-swatch-label">Screen reference</div>
+          <div id="output-reference-swatch" class="output-preview-swatch"></div>
+        </div>
+        <div>
+          <div class="output-preview-swatch-label">After tuning</div>
+          <div id="output-preview-swatch" class="output-preview-swatch"></div>
+        </div>
+      </div>
+      <div id="output-preview-text" class="output-preview-text">Press a preview button to simulate output.</div>
+    </div>
   </aside>
   <script>
       let scanInterval = 3500;
@@ -460,7 +477,7 @@
                   fwInfo.innerHTML = `<strong>${cfgDeviceVersion || 'unknown'}</strong> <small style="opacity:0.75">(${cfgDeviceArchitecture || '—'})</small>`;
               }
 
-              const fields = ['type', 'rgbwOrder', 'numLeds', 'relay-gpio', 'relay-inverted', 'brightness', 'r', 'g', 'b', 'effect', 'deviceName', 'extraMdnsTag', 'calGain', 'calRed', 'calGreen', 'calBlue', 'outputRed', 'outputGreen', 'outputBlue', 'outputWhite', 'outputRedToGreen', 'outputRedToBlue', 'outputGreenToRed', 'outputGreenToBlue', 'outputBlueToRed', 'outputBlueToGreen', 'rgbToWhiteConversion'];
+              const fields = ['type', 'rgbwOrder', 'numLeds', 'relay-gpio', 'relay-inverted', 'brightness', 'r', 'g', 'b', 'standbyOff', 'effect', 'deviceName', 'extraMdnsTag', 'calGain', 'calRed', 'calGreen', 'calBlue', 'outputRed', 'outputGreen', 'outputBlue', 'outputWhite', 'outputRedToGreen', 'outputRedToBlue', 'outputGreenToRed', 'outputGreenToBlue', 'outputBlueToRed', 'outputBlueToGreen', 'rgbToWhiteConversion'];
               fields.forEach(field => {
                   const el = document.querySelector(`[name="${field}"]`);
                   if (el && l[field] !== undefined){       
@@ -496,6 +513,8 @@
       }
 
       document.addEventListener('DOMContentLoaded', () => {          
+          setupOutputPreviewPanel();
+
           const relayToggle = document.getElementById('relay-enable-toggle');
           const relayGpioInput = document.querySelector('input[name="relay-gpio"]');
 
@@ -586,6 +605,75 @@
           }
           return true;
       } 
+
+      function setupOutputPreviewPanel() {
+          const panel = document.getElementById('output-preview-panel');
+          const header = document.getElementById('output-preview-header');
+          const toggle = document.getElementById('output-preview-toggle');
+          if (!panel || !header || !toggle) return;
+
+          const savedCollapsed = localStorage.getItem('hyperk-output-preview-collapsed') === '1';
+          panel.classList.toggle('is-collapsed', savedCollapsed);
+          toggle.innerText = savedCollapsed ? 'Show' : 'Hide';
+          toggle.setAttribute('aria-expanded', savedCollapsed ? 'false' : 'true');
+
+          const savedPosition = localStorage.getItem('hyperk-output-preview-position');
+          if (savedPosition && !window.matchMedia('(max-width: 720px)').matches) {
+              try {
+                  const pos = JSON.parse(savedPosition);
+                  panel.style.left = `${Math.max(0, pos.left)}px`;
+                  panel.style.top = `${Math.max(0, pos.top)}px`;
+                  panel.style.right = 'auto';
+                  panel.style.bottom = 'auto';
+              }
+              catch (_) {}
+          }
+
+          toggle.addEventListener('click', () => {
+              const collapsed = !panel.classList.contains('is-collapsed');
+              panel.classList.toggle('is-collapsed', collapsed);
+              toggle.innerText = collapsed ? 'Show' : 'Hide';
+              toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+              localStorage.setItem('hyperk-output-preview-collapsed', collapsed ? '1' : '0');
+          });
+
+          let dragState = null;
+          header.addEventListener('pointerdown', (e) => {
+              if (e.target.closest('button') || window.matchMedia('(max-width: 720px)').matches) return;
+              const rect = panel.getBoundingClientRect();
+              dragState = {
+                  pointerId: e.pointerId,
+                  startX: e.clientX,
+                  startY: e.clientY,
+                  left: rect.left,
+                  top: rect.top
+              };
+              header.setPointerCapture(e.pointerId);
+          });
+
+          header.addEventListener('pointermove', (e) => {
+              if (!dragState || dragState.pointerId !== e.pointerId) return;
+              const rect = panel.getBoundingClientRect();
+              const maxLeft = window.innerWidth - rect.width;
+              const maxTop = window.innerHeight - rect.height;
+              const left = Math.max(0, Math.min(maxLeft, dragState.left + e.clientX - dragState.startX));
+              const top = Math.max(0, Math.min(maxTop, dragState.top + e.clientY - dragState.startY));
+              panel.style.left = `${left}px`;
+              panel.style.top = `${top}px`;
+              panel.style.right = 'auto';
+              panel.style.bottom = 'auto';
+          });
+
+          const stopDrag = (e) => {
+              if (!dragState || dragState.pointerId !== e.pointerId) return;
+              const rect = panel.getBoundingClientRect();
+              localStorage.setItem('hyperk-output-preview-position', JSON.stringify({ left: rect.left, top: rect.top }));
+              dragState = null;
+          };
+
+          header.addEventListener('pointerup', stopDrag);
+          header.addEventListener('pointercancel', stopDrag);
+      }
 
       document.querySelector('form[action="/save_config"]').addEventListener('submit', async (e) => {
           e.preventDefault();
