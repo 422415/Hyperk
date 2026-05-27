@@ -82,7 +82,7 @@ String getDeviceArch()
         modelName = F("esp32-DOMRAEM_WLE_ADM");
     #elif defined(IOTORERO_ETHERNET)
         modelName = F("esp32-IOTORERO_ETHERNET");
-    #elif defined(ARDUINO_ARCH_ESP32) && defined(WEBSERVER_USE_ETHERNET)
+    #elif defined(ARDUINO_ARCH_ESP32) && defined(WEBSERVER_USE_ETHERNET) && !defined(HYPERK_OPTIONAL_ETHERNET)
         modelName = F("ESP32-ETH01");
     #elif defined(CONFIG_IDF_TARGET_ESP32)
         modelName = F("ESP32");

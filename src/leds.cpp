@@ -33,7 +33,19 @@
 #include "volatile_state.h"
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
-#if defined(USE_PICOLADA)
+#if defined(USE_MULTI_ESP32_LED_STRIP) && defined(USE_ANALOG_PWM)
+    #include "led_bridge/hybrid_esp32_bridge.h"
+    namespace Leds{
+        #if defined(CONFIG_IDF_TARGET_ESP32C2)
+            hybrid_esp32_bridge<false> renderer;
+        #else
+            hybrid_esp32_bridge<true> renderer;
+        #endif
+    }
+#elif defined(USE_ANALOG_PWM)
+    #include "led_bridge/analog_pwm_bridge.h"
+    namespace Leds{ analog_pwm_bridge renderer; }
+#elif defined(USE_PICOLADA)
     #include "led_bridge/picolada_bridge.h"
     namespace Leds{ picolada_bridge renderer; }
 #elif defined(USE_MULTI_ESP32_LED_STRIP)
@@ -206,6 +218,14 @@ namespace Leds{
         return static_cast<uint8_t>(v > 255 ? 255 : v);
     }
 
+    struct ColorRgbcct {
+        uint8_t R;
+        uint8_t G;
+        uint8_t B;
+        uint8_t WW;
+        uint8_t CW;
+    };
+
     inline ColorRgbw applyOutputMix(uint8_t r, uint8_t g, uint8_t b, uint8_t w, const LedConfig::OutputCorrection& output)
     {
         return {
@@ -213,6 +233,56 @@ namespace Leds{
             clampChannel(scaleGain(g, output.green) + scaleGain(r, output.redToGreen) + scaleGain(b, output.blueToGreen)),
             clampChannel(scaleGain(b, output.blue) + scaleGain(r, output.redToBlue) + scaleGain(g, output.greenToBlue)),
             scaleGain(w, output.white)
+        };
+    }
+
+    inline void splitWhiteToCct(uint8_t w, const LedConfig::OutputCorrection& output, uint8_t& ww, uint8_t& cw)
+    {
+        const uint16_t warmKelvin = constrain(output.cctWarmKelvin, static_cast<uint16_t>(1000), static_cast<uint16_t>(10000));
+        const uint16_t coldKelvin = constrain(output.cctColdKelvin, static_cast<uint16_t>(1000), static_cast<uint16_t>(10000));
+
+        if (warmKelvin >= coldKelvin)
+        {
+            ww = scaleGain(w, output.warmWhite);
+            cw = 0;
+            return;
+        }
+
+        const uint16_t targetKelvin = constrain(output.cctTargetKelvin, warmKelvin, coldKelvin);
+        const uint32_t warmWeight = static_cast<uint32_t>(coldKelvin - targetKelvin) * 255 / (coldKelvin - warmKelvin);
+        const uint32_t coldWeight = 255 - warmWeight;
+
+        ww = scaleGain(static_cast<uint8_t>((static_cast<uint16_t>(w) * warmWeight + 127) / 255), output.warmWhite);
+        cw = scaleGain(static_cast<uint8_t>((static_cast<uint16_t>(w) * coldWeight + 127) / 255), output.coldWhite);
+    }
+
+    inline ColorRgbcct applyAnalogOutputMix(uint8_t r, uint8_t g, uint8_t b, uint8_t w, uint8_t ww, uint8_t cw, const LedConfig::OutputCorrection& output)
+    {
+        ColorRgbw mixed = applyOutputMix(r, g, b, w, output);
+
+        if (output.rgbToWhite && mixed.W == 0 && ww == 0 && cw == 0)
+        {
+            const uint8_t minRgb = min(mixed.R, min(mixed.G, mixed.B));
+            const uint8_t maxRgb = max(mixed.R, max(mixed.G, mixed.B));
+            if ((maxRgb - minRgb) <= output.cctNeutralThreshold)
+            {
+                mixed.R -= minRgb;
+                mixed.G -= minRgb;
+                mixed.B -= minRgb;
+                mixed.W = scaleGain(minRgb, output.white);
+            }
+        }
+
+        uint8_t splitWw = 0;
+        uint8_t splitCw = 0;
+        splitWhiteToCct(mixed.W, output, splitWw, splitCw);
+
+        return {
+            mixed.R,
+            mixed.G,
+            mixed.B,
+            clampChannel(scaleGain(ww, output.warmWhite) + splitWw),
+            clampChannel(scaleGain(cw, output.coldWhite) + splitCw)
         };
     }
 
@@ -227,6 +297,13 @@ namespace Leds{
 
         const auto& ledCfg = Config::cfg.led;
         ColorRgbw mixed = applyOutputMix(r, g, b, 0, ledCfg.output);
+
+        if (ledCfg.type == LedType::ANALOG_RGBCCT)
+        {
+            const ColorRgbcct converted = applyAnalogOutputMix(r, g, b, 0, 0, 0, ledCfg.output);
+            renderer.setLedRgbcct(index, converted.R, converted.G, converted.B, converted.WW, converted.CW);
+            return;
+        }
 
         if (ledCfg.type == LedType::SK6812)
         {
@@ -255,26 +332,57 @@ namespace Leds{
             w = scaleBri(w);
         }
 
-        const ColorRgbw mixed = applyOutputMix(r, g, b, w, Config::cfg.led.output);
+        const auto& ledCfg = Config::cfg.led;
+
+        if (ledCfg.type == LedType::ANALOG_RGBCCT)
+        {
+            const ColorRgbcct converted = applyAnalogOutputMix(r, g, b, w, 0, 0, ledCfg.output);
+            renderer.setLedRgbcct(index, converted.R, converted.G, converted.B, converted.WW, converted.CW);
+            return;
+        }
+
+        const ColorRgbw mixed = applyOutputMix(r, g, b, w, ledCfg.output);
 
         renderer.setLedRgbw(index, mixed.R, mixed.G, mixed.B, mixed.W);
     }
 
-    void testRawColor(uint8_t r, uint8_t g, uint8_t b, uint8_t w)
+    void testRawColor(uint8_t r, uint8_t g, uint8_t b, uint8_t w, uint8_t ww, uint8_t cw)
     {
         tryWaitForRenderer();
-        Volatile::setRelay(r || g || b || w);
+        Volatile::setRelay(r || g || b || w || ww || cw);
 
         for(int i = 0; i < getLedsNumber(); i++) {
-            renderer.setLedRgbw(i, r, g, b, w);
+            if (Config::cfg.led.type == LedType::ANALOG_RGBCCT)
+            {
+                if (w > 0 && ww == 0 && cw == 0)
+                {
+                    splitWhiteToCct(w, Config::cfg.led.output, ww, cw);
+                }
+                renderer.setLedRgbcct(i, r, g, b, ww, cw);
+            }
+            else
+            {
+                renderer.setLedRgbw(i, r, g, b, w);
+            }
         }
 
         renderLed(true);
     }
 
-    void testCorrectedColor(uint8_t r, uint8_t g, uint8_t b, uint8_t w, const LedConfig::OutputCorrection& output)
+    void testCorrectedColor(uint8_t r, uint8_t g, uint8_t b, uint8_t w, const LedConfig::OutputCorrection& output, uint8_t ww, uint8_t cw)
     {
         tryWaitForRenderer();
+
+        if (Config::cfg.led.type == LedType::ANALOG_RGBCCT)
+        {
+            const ColorRgbcct mixed = applyAnalogOutputMix(r, g, b, w, ww, cw, output);
+            Volatile::setRelay(mixed.R || mixed.G || mixed.B || mixed.WW || mixed.CW);
+            for(int i = 0; i < getLedsNumber(); i++) {
+                renderer.setLedRgbcct(i, mixed.R, mixed.G, mixed.B, mixed.WW, mixed.CW);
+            }
+            renderLed(true);
+            return;
+        }
 
         ColorRgbw mixed = applyOutputMix(r, g, b, w, output);
 

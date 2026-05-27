@@ -101,8 +101,12 @@ void setup() {
 
     Leds::applyLedConfig();
 
+    const AppConfig& cfg = Config::cfg;
+
     #ifdef WEBSERVER_USE_ETHERNET
-        ETH.begin();
+        const bool shouldUseEthernet = cfg.wifi.ethernet && cfg.led.type == LedType::ANALOG_RGBCCT;
+        if (shouldUseEthernet) {
+            ETH.begin();
 
         unsigned long timeout = millis() + 8000;
         while (millis() < timeout) {
@@ -122,10 +126,9 @@ void setup() {
         if (!hasEthernet) {
             Log::debug("Starting WiFi Fallback...");
         }
+        }
     #endif
     
-    const AppConfig& cfg = Config::cfg;
-
     // WiFi connection with fallback
     if (!hasEthernet){
         #if defined(ARDUINO_ARCH_ESP32)

@@ -50,6 +50,7 @@ namespace Storage {
 
         cfg.wifi.ssid     = doc["wifi"]["ssid"] | "";
         cfg.wifi.password = doc["wifi"]["password"] | "";
+        cfg.wifi.ethernet = doc["wifi"]["ethernet"] | false;
         cfg.deviceName    = doc["deviceName"] | APP_NAME;
         cfg.extraMdnsTag  = doc["extraMdnsTag"] | "wled";
 
@@ -91,6 +92,12 @@ namespace Storage {
         cfg.led.output.greenToBlue = doc["output"]["greenToBlue"] | cfg.led.output.greenToBlue;
         cfg.led.output.blueToRed  = doc["output"]["blueToRed"]  | cfg.led.output.blueToRed;
         cfg.led.output.blueToGreen = doc["output"]["blueToGreen"] | cfg.led.output.blueToGreen;
+        cfg.led.output.warmWhite  = doc["output"]["warmWhite"]  | cfg.led.output.warmWhite;
+        cfg.led.output.coldWhite  = doc["output"]["coldWhite"]  | cfg.led.output.coldWhite;
+        cfg.led.output.cctNeutralThreshold = doc["output"]["cctNeutralThreshold"] | cfg.led.output.cctNeutralThreshold;
+        cfg.led.output.cctWarmKelvin = doc["output"]["cctWarmKelvin"] | cfg.led.output.cctWarmKelvin;
+        cfg.led.output.cctColdKelvin = doc["output"]["cctColdKelvin"] | cfg.led.output.cctColdKelvin;
+        cfg.led.output.cctTargetKelvin = doc["output"]["cctTargetKelvin"] | cfg.led.output.cctTargetKelvin;
         cfg.led.output.rgbToWhite = doc["output"]["rgbToWhite"] | cfg.led.output.rgbToWhite;
 
         cfg.led.calibration.gain  = doc["calibration"]["gain"]  | 0xFF;
@@ -106,6 +113,7 @@ namespace Storage {
 
         doc["wifi"]["ssid"]     = cfg.wifi.ssid;
         doc["wifi"]["password"] = cfg.wifi.password;
+        doc["wifi"]["ethernet"] = cfg.wifi.ethernet;
         doc["deviceName"]       = cfg.deviceName;
         doc["extraMdnsTag"]        = cfg.extraMdnsTag;
 
@@ -137,6 +145,12 @@ namespace Storage {
         doc["output"]["greenToBlue"] = cfg.led.output.greenToBlue;
         doc["output"]["blueToRed"]  = cfg.led.output.blueToRed;
         doc["output"]["blueToGreen"] = cfg.led.output.blueToGreen;
+        doc["output"]["warmWhite"]  = cfg.led.output.warmWhite;
+        doc["output"]["coldWhite"]  = cfg.led.output.coldWhite;
+        doc["output"]["cctNeutralThreshold"] = cfg.led.output.cctNeutralThreshold;
+        doc["output"]["cctWarmKelvin"] = cfg.led.output.cctWarmKelvin;
+        doc["output"]["cctColdKelvin"] = cfg.led.output.cctColdKelvin;
+        doc["output"]["cctTargetKelvin"] = cfg.led.output.cctTargetKelvin;
         doc["output"]["rgbToWhite"] = cfg.led.output.rgbToWhite;
 
         doc["calibration"]["gain"]  = cfg.led.calibration.gain;

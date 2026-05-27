@@ -164,6 +164,40 @@ details summary[role="button"]:focus {
   border-radius: var(--pico-border-radius);
 }
 
+.analog-pin-map {
+  border: 1px solid #405000;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border-radius: var(--pico-border-radius);
+}
+
+.analog-pin-map h5 {
+  margin-top: 0;
+}
+
+.analog-channel-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.analog-channel-grid div {
+  padding: 0.65rem;
+  border: 1px solid var(--pico-form-element-border-color);
+  border-radius: var(--pico-border-radius);
+  background: rgba(128, 128, 128, 0.05);
+}
+
+.analog-channel-grid strong,
+.analog-channel-grid span {
+  display: block;
+}
+
+.analog-channel-grid span {
+  color: var(--pico-muted-color);
+  font-size: 0.78rem;
+}
+
 .calibration-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -216,7 +250,7 @@ details summary[role="button"]:focus {
 
 .channel-tabs {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 0.5rem;
   margin-bottom: 1rem;
 }
@@ -306,6 +340,7 @@ details summary[role="button"]:focus {
   gap: 0.75rem;
   cursor: move;
   touch-action: none;
+  user-select: none;
 }
 
 .output-preview-title {
@@ -317,6 +352,11 @@ details summary[role="button"]:focus {
   margin: 0;
   padding: 0.25rem 0.5rem;
   font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.output-preview-panel.is-dragging {
+  opacity: 0.92;
 }
 
 .output-preview-panel.is-collapsed .output-preview-content {
@@ -377,6 +417,10 @@ details summary[role="button"]:focus {
   }
 
   .channel-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .analog-channel-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 

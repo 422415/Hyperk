@@ -56,6 +56,7 @@
               <option value="0">WS2812B NeoPixel (RGB)</option>
               <option value="1">SK6812 NeoPixel (RGBW)</option>
               <option value="2">APA102 DotStar SPI (RGB)</option>
+              <option value="3">Analog RGBCCT - QuinLED An-Penta-Plus</option>
             </select>
           </label>
 
@@ -88,11 +89,22 @@
             </select>
           </label>
 
-          <label>Number of LEDs
+          <label id="numLedsLabel">Number of LEDs
             <input type="number" name="numLeds" min="1" max="2000" value="16" required>
           </label>          
 
           <div id="segmentContainer">
+          </div>
+
+          <div id="analogPinMap" class="analog-pin-map" style="display: none;">
+            <h5>An-Penta-Plus channel map</h5>
+            <div class="analog-channel-grid">
+              <div><strong>R</strong><span>GPIO 2 / L5</span></div>
+              <div><strong>G</strong><span>GPIO 4 / L4</span></div>
+              <div><strong>B</strong><span>GPIO 12 / L3</span></div>
+              <div><strong>WW</strong><span>GPIO 32 / L2</span></div>
+              <div><strong>CW</strong><span>GPIO 33 / L1</span></div>
+            </div>
           </div>
 
           <button type="button" id="addSegmentBtn" class="addSegmentBtn outline">+ Add segment</button>        
@@ -110,7 +122,7 @@
       </details>
 
       <details ontoggle="loadSubScript('calibration', 'setupCalibration');">
-        <summary role="button" class="outline secondary">RGBW Calibration</summary>
+        <summary role="button" class="outline secondary">Output Calibration</summary>
         <div>
           <div id="whiteCalibration" style="display: none;">
             <h5>White channel calibration</h5>
@@ -124,15 +136,30 @@
             </div>
           </div>
 
+          <div id="analogCctCalibration" style="display: none;">
+            <h5>Analog RGBCCT white point</h5>
+            <p class="tuning-note">Use 6500K as the starting target for screen-matched white. Leave warm white at 0 if you want RGB + cold white only.</p>
+            <div class="calibration-grid analog-cct-grid">
+              <label>Warm LED K <input type="number" name="cctWarmKelvin" min="1000" max="10000" value="3000"></label>
+              <label>Cold LED K <input type="number" name="cctColdKelvin" min="1000" max="10000" value="6500"></label>
+              <label>Target white K <input type="number" name="cctTargetKelvin" min="1000" max="10000" value="6500"></label>
+              <label>Neutral threshold <input type="number" name="cctNeutralThreshold" min="0" max="255" value="24"></label>
+              <button type="button" id="cct-screen-white">Set 6500K</button>
+              <button type="button" id="cct-cold-only">Cold Only</button>
+            </div>
+          </div>
+
           <div id="outputCorrection" style="display: none;">
             <hr class="section-divider">
             <h5>Tune real LED channels</h5>
-            <p class="tuning-note">Tune the physical red, green, blue, and white LEDs only. Mixed colors are verification checks made from those real channels.</p>
+            <p class="tuning-note">Tune the physical LED channels only. Mixed colors are verification checks made from those real channels.</p>
             <div class="channel-tabs" role="tablist" aria-label="Output channel tuning">
               <button type="button" class="active-channel-tab" data-channel-tab="red">Red</button>
               <button type="button" data-channel-tab="green">Green</button>
               <button type="button" data-channel-tab="blue">Blue</button>
               <button type="button" data-channel-tab="white">White</button>
+              <button type="button" data-channel-tab="warmWhite" data-analog-only>Warm White</button>
+              <button type="button" data-channel-tab="coldWhite" data-analog-only>Cold White</button>
             </div>
             <section class="channel-panel" data-channel-panel="red">
               <h6>Red LED</h6>
@@ -186,15 +213,33 @@
               </div>
             </section>
             <section class="channel-panel" data-channel-panel="white" hidden>
-              <h6>White LED</h6>
+              <h6 id="white-channel-title">White LED</h6>
               <div class="tuning-grid">
-                <label>White strength
+                <label id="white-strength-label">White strength
                   <input type="range" min="0" max="255" value="255" data-tuning-range="outputWhite">
                   <input type="number" name="outputWhite" min="0" max="255" value="255" data-tuning-number="outputWhite">
                 </label>
                 <label class="white-mixer-control">
                   <input type="checkbox" name="rgbToWhiteConversion" role="switch">
                   Convert shared RGB brightness into the white LED
+                </label>
+              </div>
+            </section>
+            <section class="channel-panel" data-channel-panel="warmWhite" hidden data-analog-only>
+              <h6>Warm white LED</h6>
+              <div class="tuning-grid">
+                <label>Warm white max
+                  <input type="range" min="0" max="255" value="0" data-tuning-range="outputWarmWhite">
+                  <input type="number" name="outputWarmWhite" min="0" max="255" value="0" data-tuning-number="outputWarmWhite">
+                </label>
+              </div>
+            </section>
+            <section class="channel-panel" data-channel-panel="coldWhite" hidden data-analog-only>
+              <h6>Cold white LED</h6>
+              <div class="tuning-grid">
+                <label>Cold white max
+                  <input type="range" min="0" max="255" value="255" data-tuning-range="outputColdWhite">
+                  <input type="number" name="outputColdWhite" min="0" max="255" value="255" data-tuning-number="outputColdWhite">
                 </label>
               </div>
             </section>
@@ -207,7 +252,9 @@
               <button type="button" data-preview-channel="red" data-corrected-test data-r="160" data-g="0" data-b="0" data-w="0" data-reference-r="255" data-reference-g="0" data-reference-b="0" data-reference-w="0">Red</button>
               <button type="button" data-preview-channel="green" data-corrected-test data-r="0" data-g="160" data-b="0" data-w="0" data-reference-r="0" data-reference-g="255" data-reference-b="0" data-reference-w="0">Green</button>
               <button type="button" data-preview-channel="blue" data-corrected-test data-r="0" data-g="0" data-b="160" data-w="0" data-reference-r="0" data-reference-g="0" data-reference-b="255" data-reference-w="0">Blue</button>
-              <button type="button" data-preview-channel="white" data-corrected-test data-r="0" data-g="0" data-b="0" data-w="160" data-reference-r="0" data-reference-g="0" data-reference-b="0" data-reference-w="255">White LED</button>
+              <button type="button" data-preview-channel="white" data-corrected-test data-r="0" data-g="0" data-b="0" data-w="160" data-reference-r="0" data-reference-g="0" data-reference-b="0" data-reference-w="255">White</button>
+              <button type="button" data-preview-channel="warmWhite" data-corrected-test data-r="0" data-g="0" data-b="0" data-ww="160" data-reference-r="255" data-reference-g="190" data-reference-b="105" data-reference-ww="255" data-analog-only>Warm White</button>
+              <button type="button" data-preview-channel="coldWhite" data-corrected-test data-r="0" data-g="0" data-b="0" data-cw="160" data-reference-r="210" data-reference-g="230" data-reference-b="255" data-reference-cw="255" data-analog-only>Cold White</button>
               <button type="button" data-corrected-test data-r="0" data-g="0" data-b="0" data-w="0" data-reference-r="0" data-reference-g="0" data-reference-b="0" data-reference-w="0">Off</button>
             </div>
             <h5>Verify mixed colors</h5>
@@ -216,6 +263,7 @@
               <button type="button" data-corrected-test data-r="0" data-g="160" data-b="160" data-w="0" data-reference-r="0" data-reference-g="255" data-reference-b="255" data-reference-w="0">Cyan</button>
               <button type="button" data-corrected-test data-r="160" data-g="0" data-b="160" data-w="0" data-reference-r="255" data-reference-g="0" data-reference-b="255" data-reference-w="0">Magenta</button>
               <button type="button" data-corrected-test data-r="160" data-g="160" data-b="160" data-w="0" data-reference-r="255" data-reference-g="255" data-reference-b="255" data-reference-w="0">RGB White</button>
+              <button type="button" data-corrected-test data-r="0" data-g="0" data-b="0" data-w="160" data-reference-r="255" data-reference-g="255" data-reference-b="255" data-reference-w="255" data-analog-only>D65 CCT</button>
             </div>
             <details class="raw-test-panel">
               <summary>Raw channel test</summary>
@@ -224,6 +272,8 @@
                 <button type="button" data-raw-test data-r="0" data-g="128" data-b="0" data-w="0">G</button>
                 <button type="button" data-raw-test data-r="0" data-g="0" data-b="128" data-w="0">B</button>
                 <button type="button" data-raw-test data-r="0" data-g="0" data-b="0" data-w="128">W</button>
+                <button type="button" data-raw-test data-r="0" data-g="0" data-b="0" data-ww="128" data-analog-only>WW</button>
+                <button type="button" data-raw-test data-r="0" data-g="0" data-b="0" data-cw="128" data-analog-only>CW</button>
                 <button type="button" data-raw-test data-r="0" data-g="0" data-b="0" data-w="0">Off</button>
               </div>
             </details>
@@ -272,6 +322,15 @@
             <input type="text" name="extraMdnsTag" maxlength="15">
           </label>
         </div>
+        <div id="ethernetOption" style="display: none;">
+          <label>
+            <input type="checkbox" name="ethernetEnabled" role="switch" id="ethernet-enabled-toggle">
+            Enable An-Penta Ethernet
+          </label>
+          <small style="display:block; margin-top:0.5rem; color: var(--pico-muted-color);">
+            Available only for Analog RGBCCT. Uses WiFi fallback if Ethernet is enabled but not connected.
+          </small>
+        </div>
         <div style="margin-top: 1rem;">
           <button type="button" id="btn-switch-ap">Switch to AP</button>
         </div>        
@@ -289,8 +348,8 @@
             <label for="ota_channel" style="margin-bottom: 0.5rem; display: block;">Update Channel</label>
             <div style="display: flex; gap: 0.5rem;">
               <select id="ota_channel" style="margin-bottom: 0; flex: 1;">
-                <option value="stable">Stable</option>
-                <option value="testing">Testing</option>
+                <option value="stable">Published Releases</option>
+                <option value="testing">Include Pre-releases</option>
               </select>
               <button type="button" id="check_update_btn" class="secondary outline"
                       style="margin-bottom: 0; white-space: nowrap; width: auto; background-color: #2e7d32; border-color: #2e7d32; color: #fff;"
@@ -324,16 +383,22 @@
             </small>
           </div>
 
-          <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--pico-form-element-border-color);">
-            <label style="margin-bottom: 0.5rem; display: block;">Factory reset</label>
-            <button type="button" id="factory_reset_btn" class="contrast outline" onclick="startFactoryReset()">
-              Wipe Settings
-            </button>
-          </div>
-
           <div class="ota-footer">
             <a href="https://awawa-dev.github.io/hyperk/privacy.html" target="_blank">Privacy Policy</a>
           </div>
+        </div>
+      </details>
+
+      <details ontoggle="loadSubScript('ota', null)">
+        <summary role="button" class="outline secondary">Device Maintenance</summary>
+        <div>
+          <button type="button" id="factory_reset_btn" class="contrast outline" onclick="startFactoryReset()">
+            Factory Reset
+          </button>
+          <small style="display:block; margin-top:0.5rem; color: var(--pico-muted-color);">
+            Wipes WiFi, LED, calibration, OTA, and device-name settings, then reboots to first setup.
+          </small>
+          <div id="factory_reset_status" style="display:none; margin-top: 1rem; padding: 1rem; border: 1px solid #eab308; border-radius: var(--pico-border-radius); text-align: center;"></div>
         </div>
       </details>
 
@@ -477,7 +542,7 @@
                   fwInfo.innerHTML = `<strong>${cfgDeviceVersion || 'unknown'}</strong> <small style="opacity:0.75">(${cfgDeviceArchitecture || '—'})</small>`;
               }
 
-              const fields = ['type', 'rgbwOrder', 'numLeds', 'relay-gpio', 'relay-inverted', 'brightness', 'r', 'g', 'b', 'standbyOff', 'effect', 'deviceName', 'extraMdnsTag', 'calGain', 'calRed', 'calGreen', 'calBlue', 'outputRed', 'outputGreen', 'outputBlue', 'outputWhite', 'outputRedToGreen', 'outputRedToBlue', 'outputGreenToRed', 'outputGreenToBlue', 'outputBlueToRed', 'outputBlueToGreen', 'rgbToWhiteConversion'];
+              const fields = ['type', 'rgbwOrder', 'numLeds', 'relay-gpio', 'relay-inverted', 'brightness', 'r', 'g', 'b', 'standbyOff', 'effect', 'deviceName', 'extraMdnsTag', 'ethernetEnabled', 'calGain', 'calRed', 'calGreen', 'calBlue', 'outputRed', 'outputGreen', 'outputBlue', 'outputWhite', 'outputWarmWhite', 'outputColdWhite', 'outputRedToGreen', 'outputRedToBlue', 'outputGreenToRed', 'outputGreenToBlue', 'outputBlueToRed', 'outputBlueToGreen', 'cctNeutralThreshold', 'cctWarmKelvin', 'cctColdKelvin', 'cctTargetKelvin', 'rgbToWhiteConversion'];
               fields.forEach(field => {
                   const el = document.querySelector(`[name="${field}"]`);
                   if (el && l[field] !== undefined){       
@@ -506,6 +571,8 @@
               if (typeof setupPinValidator === "function") {
                   setupPinValidator();
               }
+
+              toggleAnalogNetworkOptions();
           }
           catch (e) {
               console.error("Config load failed:", e);
@@ -517,6 +584,7 @@
 
           const relayToggle = document.getElementById('relay-enable-toggle');
           const relayGpioInput = document.querySelector('input[name="relay-gpio"]');
+          document.getElementById('ledType')?.addEventListener('change', toggleAnalogNetworkOptions);
 
           relayToggle.addEventListener('change', (e) => {
             const displayValue = e.target.checked ? 'block' : 'none';
@@ -534,6 +602,21 @@
 
           loadCurrentConfig();
       });
+
+      function toggleAnalogNetworkOptions() {
+          const isAnalog = document.getElementById('ledType')?.value === "3";
+          const ethernetOption = document.getElementById('ethernetOption');
+          const ethernetToggle = document.getElementById('ethernet-enabled-toggle');
+          if (ethernetOption) {
+              ethernetOption.style.display = isAnalog ? 'block' : 'none';
+          }
+          if (ethernetToggle) {
+              ethernetToggle.disabled = !isAnalog;
+              if (!isAnalog) {
+                  ethernetToggle.checked = false;
+              }
+          }
+      }
 
 
       const clearErrors = (form) => {
@@ -558,6 +641,10 @@
       };
 
       let validateSegments = (f) => {
+          if (document.getElementById('ledType')?.value === "3") {
+              return true;
+          }
+
           const numLedsInput = f.querySelector('input[name="numLeds"]');
           const numLeds = numLedsInput ? parseInt(numLedsInput.value, 10) : 0;
 
@@ -612,12 +699,21 @@
           const toggle = document.getElementById('output-preview-toggle');
           if (!panel || !header || !toggle) return;
 
-          const savedCollapsed = localStorage.getItem('hyperk-output-preview-collapsed') === '1';
+          const storageGet = (key) => {
+              try { return window.localStorage ? window.localStorage.getItem(key) : null; }
+              catch (_) { return null; }
+          };
+          const storageSet = (key, value) => {
+              try { if (window.localStorage) window.localStorage.setItem(key, value); }
+              catch (_) {}
+          };
+
+          const savedCollapsed = storageGet('hyperk-output-preview-collapsed') === '1';
           panel.classList.toggle('is-collapsed', savedCollapsed);
           toggle.innerText = savedCollapsed ? 'Show' : 'Hide';
           toggle.setAttribute('aria-expanded', savedCollapsed ? 'false' : 'true');
 
-          const savedPosition = localStorage.getItem('hyperk-output-preview-position');
+          const savedPosition = storageGet('hyperk-output-preview-position');
           if (savedPosition && !window.matchMedia('(max-width: 720px)').matches) {
               try {
                   const pos = JSON.parse(savedPosition);
@@ -634,12 +730,13 @@
               panel.classList.toggle('is-collapsed', collapsed);
               toggle.innerText = collapsed ? 'Show' : 'Hide';
               toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
-              localStorage.setItem('hyperk-output-preview-collapsed', collapsed ? '1' : '0');
+              storageSet('hyperk-output-preview-collapsed', collapsed ? '1' : '0');
           });
 
           let dragState = null;
           header.addEventListener('pointerdown', (e) => {
               if (e.target.closest('button') || window.matchMedia('(max-width: 720px)').matches) return;
+              e.preventDefault();
               const rect = panel.getBoundingClientRect();
               dragState = {
                   pointerId: e.pointerId,
@@ -648,6 +745,7 @@
                   left: rect.left,
                   top: rect.top
               };
+              panel.classList.add('is-dragging');
               header.setPointerCapture(e.pointerId);
           });
 
@@ -667,7 +765,8 @@
           const stopDrag = (e) => {
               if (!dragState || dragState.pointerId !== e.pointerId) return;
               const rect = panel.getBoundingClientRect();
-              localStorage.setItem('hyperk-output-preview-position', JSON.stringify({ left: rect.left, top: rect.top }));
+              storageSet('hyperk-output-preview-position', JSON.stringify({ left: rect.left, top: rect.top }));
+              panel.classList.remove('is-dragging');
               dragState = null;
           };
 

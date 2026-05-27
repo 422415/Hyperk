@@ -26,6 +26,7 @@
 */
 
 #pragma once
+#include <algorithm>
 #include "config.h"
 
 struct led_bridge
@@ -43,4 +44,8 @@ struct led_bridge
 
     virtual inline void setLedRgb(int index, uint8_t r, uint8_t g, uint8_t b) = 0;
     virtual inline void setLedRgbw(int index, uint8_t r, uint8_t g, uint8_t b, uint8_t w) = 0;
+    virtual inline void setLedRgbcct(int index, uint8_t r, uint8_t g, uint8_t b, uint8_t ww, uint8_t cw)
+    {
+        setLedRgbw(index, r, g, b, std::max(ww, cw));
+    }
 };

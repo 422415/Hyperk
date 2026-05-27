@@ -326,6 +326,7 @@ async function startFactoryReset() {
     isUpdating = true;
     const statusArea = document.getElementById('ota_status_area');
     const statusText = document.getElementById('ota_status_text');
+    const resetStatus = document.getElementById('factory_reset_status');
     const progress = document.getElementById('ota_progress');
     const installBtn = document.getElementById('install_update_btn');
     const checkBtn = document.getElementById('check_update_btn');
@@ -337,16 +338,22 @@ async function startFactoryReset() {
     if (checkBtn) checkBtn.disabled = true;
     if (resetBtn) resetBtn.disabled = true;
     if (statusText) statusText.innerText = "Wiping settings...";
+    if (resetStatus) {
+        resetStatus.style.display = 'block';
+        resetStatus.innerText = "Wiping settings...";
+    }
 
     try {
         const res = await fetch('/api/factory_reset', { method: 'POST' });
         if (!res.ok) throw new Error(`Reset failed: ${res.status}`);
         if (statusText) statusText.innerText = "Factory reset complete. Rebooting...";
+        if (resetStatus) resetStatus.innerText = "Factory reset complete. Rebooting...";
         showToast(true);
     }
     catch (err) {
         isUpdating = false;
         if (statusText) statusText.innerText = `Factory reset failed: ${err.message}`;
+        if (resetStatus) resetStatus.innerText = `Factory reset failed: ${err.message}`;
         if (checkBtn) checkBtn.disabled = false;
         if (resetBtn) resetBtn.disabled = false;
     }

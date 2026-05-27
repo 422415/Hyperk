@@ -10,10 +10,25 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    outputs:
+      app_version: ${{ steps.version.outputs.app_version }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
+
+      - name: Read release version
+        id: version
+        shell: bash
+        run: |
+          APP_VERSION="$(tr -d '\r\n' < version)"
+          echo "app_version=${APP_VERSION}" >> "$GITHUB_OUTPUT"
+          if [[ "${APP_VERSION}" == *alpha* || "${APP_VERSION}" == *beta* || "${APP_VERSION}" == *rc* ]]; then
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -40,7 +55,7 @@ jobs:
 
       - name: Build ClassicESP
         run: |
-          ENVS="esp32 esp32-wled-esp32-ota-quinled-rgbw esp32-quinled-dig-uno-v3-wled-ota esp32-quinled-dig-uno-v3-aeplus-wled-ota esp32-quinled-dig-uno-ar-wled-ota esp32-quinled-dig-uno-aeplus-ar-wled-ota esp32s2 esp32-eth01 esp8266"
+          ENVS="esp32-wled-esp32-ota-quinled-rgbw"
           CMD="pio run -j 2"
           for env in $ENVS; do
             CMD="$CMD -e $env"
@@ -56,11 +71,11 @@ jobs:
 
       - name: Generate Job Summary
         run: |
-          echo "**Boards:** esp32 esp32-wled-esp32-ota-quinled-rgbw esp32-quinled-dig-uno-v3-wled-ota esp32-quinled-dig-uno-v3-aeplus-wled-ota esp32-quinled-dig-uno-ar-wled-ota esp32-quinled-dig-uno-aeplus-ar-wled-ota esp32s2 esp32-eth01 esp8266" >> $GITHUB_STEP_SUMMARY
+          echo "**Boards:** esp32-wled-esp32-ota-quinled-rgbw" >> $GITHUB_STEP_SUMMARY
 
   release:
     needs: build
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -72,12 +87,17 @@ jobs:
           name: Hyperk-Firmware-ClassicESP
           path: release
 
-      - name: Create Pre-release
+      - name: Publish firmware release
         uses: softprops/action-gh-release@v3
         with:
+          tag_name: ${{ needs.build.outputs.app_version }}
+          name: Hyperk ${{ needs.build.outputs.app_version }}
+          target_commitish: ${{ github.sha }}
           files: release/*
           generate_release_notes: true
-          draft: true
-          prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') }}
+          draft: false
+          prerelease: ${{ needs.build.outputs.prerelease == 'true' }}
+          fail_on_unmatched_files: true
+          overwrite_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

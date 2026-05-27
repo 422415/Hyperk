@@ -15,12 +15,12 @@ DEMO_CONFIG = {
     "architecture": "ESP32",
     "board": "esp32-wled-esp32-ota-quinled-rgbw",
     "version": "demo",
-    "segments": [{"data": 16, "clock": 0, "startIndex": 0}],
-    "segmentSupported": 2,
+    "segments": [{"data": 2, "clock": 0, "startIndex": 0}],
+    "segmentSupported": 0,
     "apMode": False,
-    "type": 1,
+    "type": 3,
     "rgbwOrder": 1,
-    "numLeds": 52,
+    "numLeds": 1,
     "relay-gpio": -1,
     "relay-inverted": False,
     "brightness": 255,
@@ -31,6 +31,7 @@ DEMO_CONFIG = {
     "effect": 0,
     "deviceName": "hyperk-demo",
     "extraMdnsTag": "wled",
+    "ethernetEnabled": False,
     "calGain": 255,
     "calRed": 176,
     "calGreen": 176,
@@ -39,12 +40,18 @@ DEMO_CONFIG = {
     "outputGreen": 255,
     "outputBlue": 255,
     "outputWhite": 255,
+    "outputWarmWhite": 0,
+    "outputColdWhite": 255,
     "outputRedToGreen": 0,
     "outputRedToBlue": 0,
     "outputGreenToRed": 0,
     "outputGreenToBlue": 0,
     "outputBlueToRed": 0,
     "outputBlueToGreen": 0,
+    "cctNeutralThreshold": 24,
+    "cctWarmKelvin": 3000,
+    "cctColdKelvin": 6500,
+    "cctTargetKelvin": 6500,
     "rgbToWhiteConversion": False,
 }
 
@@ -144,43 +151,10 @@ MOCK_SCRIPT = r"""
   }
 
   async function handleCorrectedPreview(init) {
-    const p = await paramsFromBody(init);
-    const r = Number(p.get("referenceR") || p.get("r") || 0);
-    const g = Number(p.get("referenceG") || p.get("g") || 0);
-    const b = Number(p.get("referenceB") || p.get("b") || 0);
-    const w = Number(p.get("referenceW") || p.get("w") || 0);
-
-    let outR = scaled(r, p.get("outputRed")) +
-               scaled(g, p.get("outputGreenToRed")) +
-               scaled(b, p.get("outputBlueToRed"));
-    let outG = scaled(g, p.get("outputGreen")) +
-               scaled(r, p.get("outputRedToGreen")) +
-               scaled(b, p.get("outputBlueToGreen"));
-    let outB = scaled(b, p.get("outputBlue")) +
-               scaled(r, p.get("outputRedToBlue")) +
-               scaled(g, p.get("outputGreenToBlue"));
-    let outW = scaled(w, p.get("outputWhite"));
-
-    if ((p.get("rgbToWhiteConversion") || "0") !== "0" && outW === 0) {
-      const shared = Math.min(outR, outG, outB);
-      outW = shared;
-      outR -= shared;
-      outG -= shared;
-      outB -= shared;
-    }
-
-    updatePreview("Corrected preview", [outR, outG, outB, outW], [r, g, b, w]);
     return jsonResponse({ status: "ok" });
   }
 
   async function handleRawPreview(init) {
-    const p = await paramsFromBody(init);
-    updatePreview("Raw preview", [
-      p.get("r") || 0,
-      p.get("g") || 0,
-      p.get("b") || 0,
-      p.get("w") || 0
-    ]);
     return jsonResponse({ status: "ok" });
   }
 
@@ -236,7 +210,7 @@ MOCK_SCRIPT = r"""
         tag_name: demoConfig.version,
         prerelease: false,
         assets: [{
-          name: "OTA_Hyperk_0.0.4-quinled.12_esp32-wled-esp32-ota-quinled-rgbw.bin",
+          name: "OTA_Hyperk_0.0.4-quinled.analog_esp32-wled-esp32-ota-quinled-rgbw.bin",
           browser_download_url: "https://example.invalid/demo.bin"
         }]
       }]);

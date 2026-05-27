@@ -195,6 +195,40 @@ details summary[role="button"]:focus {
   border-radius: var(--pico-border-radius);
 }
 
+.analog-pin-map {
+  border: 1px solid #405000;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border-radius: var(--pico-border-radius);
+}
+
+.analog-pin-map h5 {
+  margin-top: 0;
+}
+
+.analog-channel-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.analog-channel-grid div {
+  padding: 0.65rem;
+  border: 1px solid var(--pico-form-element-border-color);
+  border-radius: var(--pico-border-radius);
+  background: rgba(128, 128, 128, 0.05);
+}
+
+.analog-channel-grid strong,
+.analog-channel-grid span {
+  display: block;
+}
+
+.analog-channel-grid span {
+  color: var(--pico-muted-color);
+  font-size: 0.78rem;
+}
+
 .calibration-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -247,7 +281,7 @@ details summary[role="button"]:focus {
 
 .channel-tabs {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 0.5rem;
   margin-bottom: 1rem;
 }
@@ -337,6 +371,7 @@ details summary[role="button"]:focus {
   gap: 0.75rem;
   cursor: move;
   touch-action: none;
+  user-select: none;
 }
 
 .output-preview-title {
@@ -348,6 +383,11 @@ details summary[role="button"]:focus {
   margin: 0;
   padding: 0.25rem 0.5rem;
   font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.output-preview-panel.is-dragging {
+  opacity: 0.92;
 }
 
 .output-preview-panel.is-collapsed .output-preview-content {
@@ -411,6 +451,10 @@ details summary[role="button"]:focus {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .analog-channel-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .tuning-grid {
     grid-template-columns: 1fr;
   }
@@ -434,7 +478,7 @@ details summary[role="button"]:focus {
 
 <script>
 (() => {
-  const demoConfig = {"ssid": "Theater WiFi", "architecture": "ESP32", "board": "esp32-wled-esp32-ota-quinled-rgbw", "version": "0.0.4-quinled.12-demo", "segments": [{"data": 16, "clock": 0, "startIndex": 0}], "segmentSupported": 2, "apMode": false, "type": 1, "rgbwOrder": 1, "numLeds": 52, "relay-gpio": -1, "relay-inverted": false, "brightness": 255, "r": 255, "g": 255, "b": 0, "standbyOff": false, "effect": 0, "deviceName": "hyperk-demo", "extraMdnsTag": "wled", "calGain": 255, "calRed": 176, "calGreen": 176, "calBlue": 112, "outputRed": 255, "outputGreen": 255, "outputBlue": 255, "outputWhite": 255, "outputRedToGreen": 0, "outputRedToBlue": 0, "outputGreenToRed": 0, "outputGreenToBlue": 0, "outputBlueToRed": 0, "outputBlueToGreen": 0, "rgbToWhiteConversion": false};
+  const demoConfig = {"ssid": "Theater WiFi", "architecture": "ESP32", "board": "esp32-wled-esp32-ota-quinled-rgbw", "version": "0.0.4-quinled.13-demo", "segments": [{"data": 2, "clock": 0, "startIndex": 0}], "segmentSupported": 0, "apMode": false, "type": 3, "rgbwOrder": 1, "numLeds": 1, "relay-gpio": -1, "relay-inverted": false, "brightness": 255, "r": 255, "g": 255, "b": 0, "standbyOff": false, "effect": 0, "deviceName": "hyperk-demo", "extraMdnsTag": "wled", "ethernetEnabled": false, "calGain": 255, "calRed": 176, "calGreen": 176, "calBlue": 112, "outputRed": 255, "outputGreen": 255, "outputBlue": 255, "outputWhite": 255, "outputWarmWhite": 0, "outputColdWhite": 255, "outputRedToGreen": 0, "outputRedToBlue": 0, "outputGreenToRed": 0, "outputGreenToBlue": 0, "outputBlueToRed": 0, "outputBlueToGreen": 0, "cctNeutralThreshold": 24, "cctWarmKelvin": 3000, "cctColdKelvin": 6500, "cctTargetKelvin": 6500, "rgbToWhiteConversion": false};
   const nativeFetch = window.fetch ? window.fetch.bind(window) : null;
 
   function jsonResponse(data, status = 200) {
@@ -526,43 +570,10 @@ details summary[role="button"]:focus {
   }
 
   async function handleCorrectedPreview(init) {
-    const p = await paramsFromBody(init);
-    const r = Number(p.get("referenceR") || p.get("r") || 0);
-    const g = Number(p.get("referenceG") || p.get("g") || 0);
-    const b = Number(p.get("referenceB") || p.get("b") || 0);
-    const w = Number(p.get("referenceW") || p.get("w") || 0);
-
-    let outR = scaled(r, p.get("outputRed")) +
-               scaled(g, p.get("outputGreenToRed")) +
-               scaled(b, p.get("outputBlueToRed"));
-    let outG = scaled(g, p.get("outputGreen")) +
-               scaled(r, p.get("outputRedToGreen")) +
-               scaled(b, p.get("outputBlueToGreen"));
-    let outB = scaled(b, p.get("outputBlue")) +
-               scaled(r, p.get("outputRedToBlue")) +
-               scaled(g, p.get("outputGreenToBlue"));
-    let outW = scaled(w, p.get("outputWhite"));
-
-    if ((p.get("rgbToWhiteConversion") || "0") !== "0" && outW === 0) {
-      const shared = Math.min(outR, outG, outB);
-      outW = shared;
-      outR -= shared;
-      outG -= shared;
-      outB -= shared;
-    }
-
-    updatePreview("Corrected preview", [outR, outG, outB, outW], [r, g, b, w]);
     return jsonResponse({ status: "ok" });
   }
 
   async function handleRawPreview(init) {
-    const p = await paramsFromBody(init);
-    updatePreview("Raw preview", [
-      p.get("r") || 0,
-      p.get("g") || 0,
-      p.get("b") || 0,
-      p.get("w") || 0
-    ]);
     return jsonResponse({ status: "ok" });
   }
 
@@ -618,7 +629,7 @@ details summary[role="button"]:focus {
         tag_name: demoConfig.version,
         prerelease: false,
         assets: [{
-          name: "OTA_Hyperk_0.0.4-quinled.12_esp32-wled-esp32-ota-quinled-rgbw.bin",
+          name: "OTA_Hyperk_0.0.4-quinled.analog_esp32-wled-esp32-ota-quinled-rgbw.bin",
           browser_download_url: "https://example.invalid/demo.bin"
         }]
       }]);
@@ -708,6 +719,7 @@ details summary[role="button"]:focus {
               <option value="0">WS2812B NeoPixel (RGB)</option>
               <option value="1">SK6812 NeoPixel (RGBW)</option>
               <option value="2">APA102 DotStar SPI (RGB)</option>
+              <option value="3">Analog RGBCCT - QuinLED An-Penta-Plus</option>
             </select>
           </label>
 
@@ -740,11 +752,22 @@ details summary[role="button"]:focus {
             </select>
           </label>
 
-          <label>Number of LEDs
+          <label id="numLedsLabel">Number of LEDs
             <input type="number" name="numLeds" min="1" max="2000" value="16" required>
           </label>
 
           <div id="segmentContainer">
+          </div>
+
+          <div id="analogPinMap" class="analog-pin-map" style="display: none;">
+            <h5>An-Penta-Plus channel map</h5>
+            <div class="analog-channel-grid">
+              <div><strong>R</strong><span>GPIO 2 / L5</span></div>
+              <div><strong>G</strong><span>GPIO 4 / L4</span></div>
+              <div><strong>B</strong><span>GPIO 12 / L3</span></div>
+              <div><strong>WW</strong><span>GPIO 32 / L2</span></div>
+              <div><strong>CW</strong><span>GPIO 33 / L1</span></div>
+            </div>
           </div>
 
           <button type="button" id="addSegmentBtn" class="addSegmentBtn outline">+ Add segment</button>
@@ -762,7 +785,7 @@ details summary[role="button"]:focus {
       </details>
 
       <details ontoggle="loadSubScript('calibration', 'setupCalibration');">
-        <summary role="button" class="outline secondary">RGBW Calibration</summary>
+        <summary role="button" class="outline secondary">Output Calibration</summary>
         <div>
           <div id="whiteCalibration" style="display: none;">
             <h5>White channel calibration</h5>
@@ -776,15 +799,30 @@ details summary[role="button"]:focus {
             </div>
           </div>
 
+          <div id="analogCctCalibration" style="display: none;">
+            <h5>Analog RGBCCT white point</h5>
+            <p class="tuning-note">Use 6500K as the starting target for screen-matched white. Leave warm white at 0 if you want RGB + cold white only.</p>
+            <div class="calibration-grid analog-cct-grid">
+              <label>Warm LED K <input type="number" name="cctWarmKelvin" min="1000" max="10000" value="3000"></label>
+              <label>Cold LED K <input type="number" name="cctColdKelvin" min="1000" max="10000" value="6500"></label>
+              <label>Target white K <input type="number" name="cctTargetKelvin" min="1000" max="10000" value="6500"></label>
+              <label>Neutral threshold <input type="number" name="cctNeutralThreshold" min="0" max="255" value="24"></label>
+              <button type="button" id="cct-screen-white">Set 6500K</button>
+              <button type="button" id="cct-cold-only">Cold Only</button>
+            </div>
+          </div>
+
           <div id="outputCorrection" style="display: none;">
             <hr class="section-divider">
             <h5>Tune real LED channels</h5>
-            <p class="tuning-note">Tune the physical red, green, blue, and white LEDs only. Mixed colors are verification checks made from those real channels.</p>
+            <p class="tuning-note">Tune the physical LED channels only. Mixed colors are verification checks made from those real channels.</p>
             <div class="channel-tabs" role="tablist" aria-label="Output channel tuning">
               <button type="button" class="active-channel-tab" data-channel-tab="red">Red</button>
               <button type="button" data-channel-tab="green">Green</button>
               <button type="button" data-channel-tab="blue">Blue</button>
               <button type="button" data-channel-tab="white">White</button>
+              <button type="button" data-channel-tab="warmWhite" data-analog-only>Warm White</button>
+              <button type="button" data-channel-tab="coldWhite" data-analog-only>Cold White</button>
             </div>
             <section class="channel-panel" data-channel-panel="red">
               <h6>Red LED</h6>
@@ -838,15 +876,33 @@ details summary[role="button"]:focus {
               </div>
             </section>
             <section class="channel-panel" data-channel-panel="white" hidden>
-              <h6>White LED</h6>
+              <h6 id="white-channel-title">White LED</h6>
               <div class="tuning-grid">
-                <label>White strength
+                <label id="white-strength-label">White strength
                   <input type="range" min="0" max="255" value="255" data-tuning-range="outputWhite">
                   <input type="number" name="outputWhite" min="0" max="255" value="255" data-tuning-number="outputWhite">
                 </label>
                 <label class="white-mixer-control">
                   <input type="checkbox" name="rgbToWhiteConversion" role="switch">
                   Convert shared RGB brightness into the white LED
+                </label>
+              </div>
+            </section>
+            <section class="channel-panel" data-channel-panel="warmWhite" hidden data-analog-only>
+              <h6>Warm white LED</h6>
+              <div class="tuning-grid">
+                <label>Warm white max
+                  <input type="range" min="0" max="255" value="0" data-tuning-range="outputWarmWhite">
+                  <input type="number" name="outputWarmWhite" min="0" max="255" value="0" data-tuning-number="outputWarmWhite">
+                </label>
+              </div>
+            </section>
+            <section class="channel-panel" data-channel-panel="coldWhite" hidden data-analog-only>
+              <h6>Cold white LED</h6>
+              <div class="tuning-grid">
+                <label>Cold white max
+                  <input type="range" min="0" max="255" value="255" data-tuning-range="outputColdWhite">
+                  <input type="number" name="outputColdWhite" min="0" max="255" value="255" data-tuning-number="outputColdWhite">
                 </label>
               </div>
             </section>
@@ -859,7 +915,9 @@ details summary[role="button"]:focus {
               <button type="button" data-preview-channel="red" data-corrected-test data-r="160" data-g="0" data-b="0" data-w="0" data-reference-r="255" data-reference-g="0" data-reference-b="0" data-reference-w="0">Red</button>
               <button type="button" data-preview-channel="green" data-corrected-test data-r="0" data-g="160" data-b="0" data-w="0" data-reference-r="0" data-reference-g="255" data-reference-b="0" data-reference-w="0">Green</button>
               <button type="button" data-preview-channel="blue" data-corrected-test data-r="0" data-g="0" data-b="160" data-w="0" data-reference-r="0" data-reference-g="0" data-reference-b="255" data-reference-w="0">Blue</button>
-              <button type="button" data-preview-channel="white" data-corrected-test data-r="0" data-g="0" data-b="0" data-w="160" data-reference-r="0" data-reference-g="0" data-reference-b="0" data-reference-w="255">White LED</button>
+              <button type="button" data-preview-channel="white" data-corrected-test data-r="0" data-g="0" data-b="0" data-w="160" data-reference-r="0" data-reference-g="0" data-reference-b="0" data-reference-w="255">White</button>
+              <button type="button" data-preview-channel="warmWhite" data-corrected-test data-r="0" data-g="0" data-b="0" data-ww="160" data-reference-r="255" data-reference-g="190" data-reference-b="105" data-reference-ww="255" data-analog-only>Warm White</button>
+              <button type="button" data-preview-channel="coldWhite" data-corrected-test data-r="0" data-g="0" data-b="0" data-cw="160" data-reference-r="210" data-reference-g="230" data-reference-b="255" data-reference-cw="255" data-analog-only>Cold White</button>
               <button type="button" data-corrected-test data-r="0" data-g="0" data-b="0" data-w="0" data-reference-r="0" data-reference-g="0" data-reference-b="0" data-reference-w="0">Off</button>
             </div>
             <h5>Verify mixed colors</h5>
@@ -868,6 +926,7 @@ details summary[role="button"]:focus {
               <button type="button" data-corrected-test data-r="0" data-g="160" data-b="160" data-w="0" data-reference-r="0" data-reference-g="255" data-reference-b="255" data-reference-w="0">Cyan</button>
               <button type="button" data-corrected-test data-r="160" data-g="0" data-b="160" data-w="0" data-reference-r="255" data-reference-g="0" data-reference-b="255" data-reference-w="0">Magenta</button>
               <button type="button" data-corrected-test data-r="160" data-g="160" data-b="160" data-w="0" data-reference-r="255" data-reference-g="255" data-reference-b="255" data-reference-w="0">RGB White</button>
+              <button type="button" data-corrected-test data-r="0" data-g="0" data-b="0" data-w="160" data-reference-r="255" data-reference-g="255" data-reference-b="255" data-reference-w="255" data-analog-only>D65 CCT</button>
             </div>
             <details class="raw-test-panel">
               <summary>Raw channel test</summary>
@@ -876,6 +935,8 @@ details summary[role="button"]:focus {
                 <button type="button" data-raw-test data-r="0" data-g="128" data-b="0" data-w="0">G</button>
                 <button type="button" data-raw-test data-r="0" data-g="0" data-b="128" data-w="0">B</button>
                 <button type="button" data-raw-test data-r="0" data-g="0" data-b="0" data-w="128">W</button>
+                <button type="button" data-raw-test data-r="0" data-g="0" data-b="0" data-ww="128" data-analog-only>WW</button>
+                <button type="button" data-raw-test data-r="0" data-g="0" data-b="0" data-cw="128" data-analog-only>CW</button>
                 <button type="button" data-raw-test data-r="0" data-g="0" data-b="0" data-w="0">Off</button>
               </div>
             </details>
@@ -924,6 +985,15 @@ details summary[role="button"]:focus {
             <input type="text" name="extraMdnsTag" maxlength="15">
           </label>
         </div>
+        <div id="ethernetOption" style="display: none;">
+          <label>
+            <input type="checkbox" name="ethernetEnabled" role="switch" id="ethernet-enabled-toggle">
+            Enable An-Penta Ethernet
+          </label>
+          <small style="display:block; margin-top:0.5rem; color: var(--pico-muted-color);">
+            Available only for Analog RGBCCT. Uses WiFi fallback if Ethernet is enabled but not connected.
+          </small>
+        </div>
         <div style="margin-top: 1rem;">
           <button type="button" id="btn-switch-ap">Switch to AP</button>
         </div>
@@ -941,8 +1011,8 @@ details summary[role="button"]:focus {
             <label for="ota_channel" style="margin-bottom: 0.5rem; display: block;">Update Channel</label>
             <div style="display: flex; gap: 0.5rem;">
               <select id="ota_channel" style="margin-bottom: 0; flex: 1;">
-                <option value="stable">Stable</option>
-                <option value="testing">Testing</option>
+                <option value="stable">Published Releases</option>
+                <option value="testing">Include Pre-releases</option>
               </select>
               <button type="button" id="check_update_btn" class="secondary outline"
                       style="margin-bottom: 0; white-space: nowrap; width: auto; background-color: #2e7d32; border-color: #2e7d32; color: #fff;"
@@ -976,16 +1046,22 @@ details summary[role="button"]:focus {
             </small>
           </div>
 
-          <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--pico-form-element-border-color);">
-            <label style="margin-bottom: 0.5rem; display: block;">Factory reset</label>
-            <button type="button" id="factory_reset_btn" class="contrast outline" onclick="startFactoryReset()">
-              Wipe Settings
-            </button>
-          </div>
-
           <div class="ota-footer">
             <a href="https://awawa-dev.github.io/hyperk/privacy.html" target="_blank">Privacy Policy</a>
           </div>
+        </div>
+      </details>
+
+      <details ontoggle="loadSubScript('ota', null)">
+        <summary role="button" class="outline secondary">Device Maintenance</summary>
+        <div>
+          <button type="button" id="factory_reset_btn" class="contrast outline" onclick="startFactoryReset()">
+            Factory Reset
+          </button>
+          <small style="display:block; margin-top:0.5rem; color: var(--pico-muted-color);">
+            Wipes WiFi, LED, calibration, OTA, and device-name settings, then reboots to first setup.
+          </small>
+          <div id="factory_reset_status" style="display:none; margin-top: 1rem; padding: 1rem; border: 1px solid #eab308; border-radius: var(--pico-border-radius); text-align: center;"></div>
         </div>
       </details>
 
@@ -1048,7 +1124,7 @@ details summary[role="button"]:focus {
               console.log(`Loading module: ${scriptName}`);
 
               const script = document.createElement('script');
-              script.src = `/${scriptName}.js?v=0.0.4-quinled.12`;
+              script.src = `/${scriptName}.js?v=0.0.4-quinled.13`;
 
               script.onload = () => {
                   loadedScripts[scriptName] = true;
@@ -1129,7 +1205,7 @@ details summary[role="button"]:focus {
                   fwInfo.innerHTML = `<strong>${cfgDeviceVersion || 'unknown'}</strong> <small style="opacity:0.75">(${cfgDeviceArchitecture || '—'})</small>`;
               }
 
-              const fields = ['type', 'rgbwOrder', 'numLeds', 'relay-gpio', 'relay-inverted', 'brightness', 'r', 'g', 'b', 'standbyOff', 'effect', 'deviceName', 'extraMdnsTag', 'calGain', 'calRed', 'calGreen', 'calBlue', 'outputRed', 'outputGreen', 'outputBlue', 'outputWhite', 'outputRedToGreen', 'outputRedToBlue', 'outputGreenToRed', 'outputGreenToBlue', 'outputBlueToRed', 'outputBlueToGreen', 'rgbToWhiteConversion'];
+              const fields = ['type', 'rgbwOrder', 'numLeds', 'relay-gpio', 'relay-inverted', 'brightness', 'r', 'g', 'b', 'standbyOff', 'effect', 'deviceName', 'extraMdnsTag', 'ethernetEnabled', 'calGain', 'calRed', 'calGreen', 'calBlue', 'outputRed', 'outputGreen', 'outputBlue', 'outputWhite', 'outputWarmWhite', 'outputColdWhite', 'outputRedToGreen', 'outputRedToBlue', 'outputGreenToRed', 'outputGreenToBlue', 'outputBlueToRed', 'outputBlueToGreen', 'cctNeutralThreshold', 'cctWarmKelvin', 'cctColdKelvin', 'cctTargetKelvin', 'rgbToWhiteConversion'];
               fields.forEach(field => {
                   const el = document.querySelector(`[name="${field}"]`);
                   if (el && l[field] !== undefined){
@@ -1158,6 +1234,8 @@ details summary[role="button"]:focus {
               if (typeof setupPinValidator === "function") {
                   setupPinValidator();
               }
+
+              toggleAnalogNetworkOptions();
           }
           catch (e) {
               console.error("Config load failed:", e);
@@ -1169,6 +1247,7 @@ details summary[role="button"]:focus {
 
           const relayToggle = document.getElementById('relay-enable-toggle');
           const relayGpioInput = document.querySelector('input[name="relay-gpio"]');
+          document.getElementById('ledType')?.addEventListener('change', toggleAnalogNetworkOptions);
 
           relayToggle.addEventListener('change', (e) => {
             const displayValue = e.target.checked ? 'block' : 'none';
@@ -1186,6 +1265,21 @@ details summary[role="button"]:focus {
 
           loadCurrentConfig();
       });
+
+      function toggleAnalogNetworkOptions() {
+          const isAnalog = document.getElementById('ledType')?.value === "3";
+          const ethernetOption = document.getElementById('ethernetOption');
+          const ethernetToggle = document.getElementById('ethernet-enabled-toggle');
+          if (ethernetOption) {
+              ethernetOption.style.display = isAnalog ? 'block' : 'none';
+          }
+          if (ethernetToggle) {
+              ethernetToggle.disabled = !isAnalog;
+              if (!isAnalog) {
+                  ethernetToggle.checked = false;
+              }
+          }
+      }
 
 
       const clearErrors = (form) => {
@@ -1210,6 +1304,10 @@ details summary[role="button"]:focus {
       };
 
       let validateSegments = (f) => {
+          if (document.getElementById('ledType')?.value === "3") {
+              return true;
+          }
+
           const numLedsInput = f.querySelector('input[name="numLeds"]');
           const numLeds = numLedsInput ? parseInt(numLedsInput.value, 10) : 0;
 
@@ -1264,12 +1362,21 @@ details summary[role="button"]:focus {
           const toggle = document.getElementById('output-preview-toggle');
           if (!panel || !header || !toggle) return;
 
-          const savedCollapsed = localStorage.getItem('hyperk-output-preview-collapsed') === '1';
+          const storageGet = (key) => {
+              try { return window.localStorage ? window.localStorage.getItem(key) : null; }
+              catch (_) { return null; }
+          };
+          const storageSet = (key, value) => {
+              try { if (window.localStorage) window.localStorage.setItem(key, value); }
+              catch (_) {}
+          };
+
+          const savedCollapsed = storageGet('hyperk-output-preview-collapsed') === '1';
           panel.classList.toggle('is-collapsed', savedCollapsed);
           toggle.innerText = savedCollapsed ? 'Show' : 'Hide';
           toggle.setAttribute('aria-expanded', savedCollapsed ? 'false' : 'true');
 
-          const savedPosition = localStorage.getItem('hyperk-output-preview-position');
+          const savedPosition = storageGet('hyperk-output-preview-position');
           if (savedPosition && !window.matchMedia('(max-width: 720px)').matches) {
               try {
                   const pos = JSON.parse(savedPosition);
@@ -1286,12 +1393,13 @@ details summary[role="button"]:focus {
               panel.classList.toggle('is-collapsed', collapsed);
               toggle.innerText = collapsed ? 'Show' : 'Hide';
               toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
-              localStorage.setItem('hyperk-output-preview-collapsed', collapsed ? '1' : '0');
+              storageSet('hyperk-output-preview-collapsed', collapsed ? '1' : '0');
           });
 
           let dragState = null;
           header.addEventListener('pointerdown', (e) => {
               if (e.target.closest('button') || window.matchMedia('(max-width: 720px)').matches) return;
+              e.preventDefault();
               const rect = panel.getBoundingClientRect();
               dragState = {
                   pointerId: e.pointerId,
@@ -1300,6 +1408,7 @@ details summary[role="button"]:focus {
                   left: rect.left,
                   top: rect.top
               };
+              panel.classList.add('is-dragging');
               header.setPointerCapture(e.pointerId);
           });
 
@@ -1319,7 +1428,8 @@ details summary[role="button"]:focus {
           const stopDrag = (e) => {
               if (!dragState || dragState.pointerId !== e.pointerId) return;
               const rect = panel.getBoundingClientRect();
-              localStorage.setItem('hyperk-output-preview-position', JSON.stringify({ left: rect.left, top: rect.top }));
+              storageSet('hyperk-output-preview-position', JSON.stringify({ left: rect.left, top: rect.top }));
+              panel.classList.remove('is-dragging');
               dragState = null;
           };
 
@@ -1414,6 +1524,32 @@ function setupPinValidator() {
 
     function setupSegments() {
         const isSpi = els.type.value == "2";
+        const isAnalog = els.type.value == "3";
+        const analogPinMap = document.getElementById('analogPinMap');
+
+        if (isAnalog) {
+            els.segContainer.innerHTML = '';
+            els.addSegBtn.style.display = 'none';
+            els.addSegBtn.onclick = null;
+            const numLedsLabel = document.getElementById('numLedsLabel');
+            if (numLedsLabel && numLedsLabel.firstChild) {
+                numLedsLabel.firstChild.textContent = 'Input zones to average ';
+            }
+            if (analogPinMap) {
+                analogPinMap.style.display = 'block';
+            }
+            return;
+        }
+
+        const numLedsLabel = document.getElementById('numLedsLabel');
+        if (numLedsLabel && numLedsLabel.firstChild) {
+            numLedsLabel.firstChild.textContent = 'Number of LEDs ';
+        }
+
+        if (analogPinMap) {
+            analogPinMap.style.display = 'none';
+        }
+
         const cfg = hardwareLimits[arch];
         const basePins = cfg ? (isSpi ? Object.keys(cfg.spi).map(Number) : cfg.gpio) : null;
         const allUsedPins = cfgSegments.map(s => parseInt(s.data, 10));
@@ -1541,19 +1677,55 @@ function setCalibration(gain, r, g, b) {
     }
 }
 
+function isAnalogOutput() {
+    return document.getElementById('ledType')?.value === "3";
+}
+
 function toggleCalibration() {
     const ledTypeSelect = document.getElementById('ledType');
     const calSection = document.getElementById('whiteCalibration');
+    const analogSection = document.getElementById('analogCctCalibration');
     const rgbwOrderControl = document.getElementById('rgbwOrderControl');
     const outputCorrection = document.getElementById('outputCorrection');
     const isRgbw = ledTypeSelect.value === "1";
+    const isAnalog = ledTypeSelect.value === "3";
 
     calSection.style.display = isRgbw ? "block" : "none";
+    if (analogSection) {
+        analogSection.style.display = isAnalog ? "block" : "none";
+    }
     if (rgbwOrderControl) {
         rgbwOrderControl.style.display = isRgbw ? "block" : "none";
     }
     if (outputCorrection) {
-        outputCorrection.style.display = isRgbw ? "block" : "none";
+        outputCorrection.style.display = (isRgbw || isAnalog) ? "block" : "none";
+    }
+
+    document.querySelectorAll('[data-analog-only]').forEach((el) => {
+        el.style.display = isAnalog ? '' : 'none';
+    });
+
+    const whiteTitle = document.getElementById('white-channel-title');
+    const whiteLabel = document.getElementById('white-strength-label');
+    if (whiteTitle) {
+        whiteTitle.textContent = isAnalog ? 'CCT white' : 'White LED';
+    }
+    const whiteTab = document.querySelector('[data-channel-tab="white"]');
+    if (whiteTab) {
+        whiteTab.textContent = isAnalog ? 'CCT White' : 'White';
+    }
+    if (whiteLabel && whiteLabel.firstChild) {
+        whiteLabel.firstChild.textContent = isAnalog ? 'CCT white strength ' : 'White strength ';
+    }
+
+    const mixerLabel = document.querySelector('.white-mixer-control');
+    if (mixerLabel && mixerLabel.lastChild) {
+        mixerLabel.lastChild.textContent = isAnalog ? ' Extract near-neutral RGB into CCT white' : ' Convert shared RGB brightness into the white LED';
+    }
+
+    const activeTab = document.querySelector('[data-channel-tab].active-channel-tab');
+    if (activeTab && activeTab.style.display === 'none') {
+        selectChannelTab('red', false);
     }
 }
 
@@ -1570,7 +1742,10 @@ const outputTuningDefaults = {
     outputGreenToRed: 0,
     outputGreenToBlue: 0,
     outputBlueToRed: 0,
-    outputBlueToGreen: 0
+    outputBlueToGreen: 0,
+    outputWarmWhite: 0,
+    outputColdWhite: 255,
+    outputWhite: 255
 };
 
 function clampChannelValue(value) {
@@ -1584,16 +1759,29 @@ function scaledChannel(value, gain) {
 }
 
 function formatChannelValues(values) {
-    const [r, g, b, w] = values.map(clampChannelValue);
+    const [r, g, b, w, ww, cw] = normalizeChannelValues(values);
+    if (ww || cw || isAnalogOutput()) {
+        return `R ${r} / G ${g} / B ${b} / W ${w} / WW ${ww} / CW ${cw}`;
+    }
     return `R ${r} / G ${g} / B ${b} / W ${w}`;
 }
 
+function normalizeChannelValues(values) {
+    const next = [0, 0, 0, 0, 0, 0];
+    values.forEach((value, index) => {
+        if (index < next.length) {
+            next[index] = clampChannelValue(value);
+        }
+    });
+    return next;
+}
+
 function displayColorFromChannels(values) {
-    const [r, g, b, w] = values.map(clampChannelValue);
+    const [r, g, b, w, ww, cw] = normalizeChannelValues(values);
     return [
-        clampChannelValue(r + w),
-        clampChannelValue(g + w),
-        clampChannelValue(b + w)
+        clampChannelValue(r + w + ww + (cw * 0.82)),
+        clampChannelValue(g + w + (ww * 0.76) + (cw * 0.90)),
+        clampChannelValue(b + w + (ww * 0.42) + cw)
     ];
 }
 
@@ -1608,11 +1796,11 @@ function updateOutputPreview(title, values, requestedValues = null) {
     const text = document.getElementById('output-preview-text');
     if (!referenceSwatch || !outputSwatch || !text) return;
 
-    const [r, g, b, w] = values.map(clampChannelValue);
+    const [r, g, b, w, ww, cw] = normalizeChannelValues(values);
     const referenceValues = requestedValues || values;
 
     setSwatchColor(referenceSwatch, referenceValues);
-    setSwatchColor(outputSwatch, [r, g, b, w]);
+    setSwatchColor(outputSwatch, [r, g, b, w, ww, cw]);
     text.innerHTML = '';
 
     const titleLine = document.createElement('div');
@@ -1626,8 +1814,30 @@ function updateOutputPreview(title, values, requestedValues = null) {
 
     const outputLine = document.createElement('div');
     outputLine.className = 'output-preview-output';
-    outputLine.textContent = `After tuning: ${formatChannelValues([r, g, b, w])}`;
+    outputLine.textContent = `After tuning: ${formatChannelValues([r, g, b, w, ww, cw])}`;
     text.appendChild(outputLine);
+}
+
+function getNumberParam(params, name, fallback = 0) {
+    const parsed = Number(params.get(name));
+    return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function splitWhiteToCctPreview(w, params) {
+    const warmKelvin = Math.max(1000, Math.min(10000, getNumberParam(params, 'cctWarmKelvin', 3000)));
+    const coldKelvin = Math.max(1000, Math.min(10000, getNumberParam(params, 'cctColdKelvin', 6500)));
+    const targetKelvin = Math.max(warmKelvin, Math.min(coldKelvin, getNumberParam(params, 'cctTargetKelvin', 6500)));
+
+    if (warmKelvin >= coldKelvin) {
+        return [scaledChannel(w, params.get('outputWarmWhite')), 0];
+    }
+
+    const warmWeight = (coldKelvin - targetKelvin) / (coldKelvin - warmKelvin);
+    const coldWeight = 1 - warmWeight;
+    return [
+        scaledChannel(w * warmWeight, params.get('outputWarmWhite')),
+        scaledChannel(w * coldWeight, params.get('outputColdWhite'))
+    ];
 }
 
 function updateCorrectedOutputPreview(params) {
@@ -1635,7 +1845,9 @@ function updateCorrectedOutputPreview(params) {
         params.get('referenceR') ?? params.get('r'),
         params.get('referenceG') ?? params.get('g'),
         params.get('referenceB') ?? params.get('b'),
-        params.get('referenceW') ?? params.get('w')
+        params.get('referenceW') ?? params.get('w'),
+        params.get('referenceWw') ?? params.get('ww'),
+        params.get('referenceCw') ?? params.get('cw')
     ];
     let outR = scaledChannel(requested[0], params.get('outputRed')) +
                scaledChannel(requested[1], params.get('outputGreenToRed')) +
@@ -1647,8 +1859,28 @@ function updateCorrectedOutputPreview(params) {
                scaledChannel(requested[0], params.get('outputRedToBlue')) +
                scaledChannel(requested[1], params.get('outputGreenToBlue'));
     let outW = scaledChannel(requested[3], params.get('outputWhite'));
+    let outWw = scaledChannel(requested[4], params.get('outputWarmWhite'));
+    let outCw = scaledChannel(requested[5], params.get('outputColdWhite'));
 
-    if (params.get('rgbToWhiteConversion') !== '0' && outW === 0) {
+    if (isAnalogOutput()) {
+        if (params.get('rgbToWhiteConversion') !== '0' && outW === 0 && outWw === 0 && outCw === 0) {
+            const sharedWhite = Math.min(outR, outG, outB);
+            const maxRgb = Math.max(outR, outG, outB);
+            const threshold = getNumberParam(params, 'cctNeutralThreshold', 24);
+            if ((maxRgb - sharedWhite) <= threshold) {
+                outW = scaledChannel(sharedWhite, params.get('outputWhite'));
+                outR -= sharedWhite;
+                outG -= sharedWhite;
+                outB -= sharedWhite;
+            }
+        }
+
+        const [splitWw, splitCw] = splitWhiteToCctPreview(outW, params);
+        outWw = clampChannelValue(outWw + splitWw);
+        outCw = clampChannelValue(outCw + splitCw);
+        outW = 0;
+    }
+    else if (params.get('rgbToWhiteConversion') !== '0' && outW === 0) {
         const sharedWhite = Math.min(outR, outG, outB);
         outW = sharedWhite;
         outR -= sharedWhite;
@@ -1656,7 +1888,7 @@ function updateCorrectedOutputPreview(params) {
         outB -= sharedWhite;
     }
 
-    updateOutputPreview('Corrected preview', [outR, outG, outB, outW], requested);
+    updateOutputPreview('Corrected preview', [outR, outG, outB, outW, outWw, outCw], requested);
 }
 
 function setTuningValue(name, value) {
@@ -1682,12 +1914,18 @@ function collectTuningParams() {
         outputGreen: getTuningValue('outputGreen'),
         outputBlue: getTuningValue('outputBlue'),
         outputWhite: getTuningValue('outputWhite'),
+        outputWarmWhite: getTuningValue('outputWarmWhite'),
+        outputColdWhite: getTuningValue('outputColdWhite'),
         outputRedToGreen: getTuningValue('outputRedToGreen'),
         outputRedToBlue: getTuningValue('outputRedToBlue'),
         outputGreenToRed: getTuningValue('outputGreenToRed'),
         outputGreenToBlue: getTuningValue('outputGreenToBlue'),
         outputBlueToRed: getTuningValue('outputBlueToRed'),
         outputBlueToGreen: getTuningValue('outputBlueToGreen'),
+        cctNeutralThreshold: document.querySelector('[name="cctNeutralThreshold"]')?.value || '24',
+        cctWarmKelvin: document.querySelector('[name="cctWarmKelvin"]')?.value || '3000',
+        cctColdKelvin: document.querySelector('[name="cctColdKelvin"]')?.value || '6500',
+        cctTargetKelvin: document.querySelector('[name="cctTargetKelvin"]')?.value || '6500',
         rgbToWhiteConversion: document.querySelector('[name="rgbToWhiteConversion"]')?.checked ? '1' : '0'
     });
 
@@ -1702,10 +1940,14 @@ async function sendCorrectedPreview(button) {
     body.set('g', button.dataset.g || '0');
     body.set('b', button.dataset.b || '0');
     body.set('w', button.dataset.w || '0');
+    body.set('ww', button.dataset.ww || '0');
+    body.set('cw', button.dataset.cw || '0');
     body.set('referenceR', button.dataset.referenceR || button.dataset.r || '0');
     body.set('referenceG', button.dataset.referenceG || button.dataset.g || '0');
     body.set('referenceB', button.dataset.referenceB || button.dataset.b || '0');
     body.set('referenceW', button.dataset.referenceW || button.dataset.w || '0');
+    body.set('referenceWw', button.dataset.referenceWw || button.dataset.ww || '0');
+    body.set('referenceCw', button.dataset.referenceCw || button.dataset.cw || '0');
 
     updateCorrectedOutputPreview(body);
     button.setAttribute('aria-busy', 'true');
@@ -1784,6 +2026,9 @@ function setupTuningControls() {
     });
 
     document.querySelector('[name="rgbToWhiteConversion"]')?.addEventListener('change', scheduleCorrectedPreview);
+    document.querySelectorAll('[name="cctNeutralThreshold"], [name="cctWarmKelvin"], [name="cctColdKelvin"], [name="cctTargetKelvin"]').forEach((control) => {
+        control.addEventListener('input', scheduleCorrectedPreview);
+    });
     document.getElementById('reset-output-tuning')?.addEventListener('click', resetOutputTuning);
     document.getElementById('save-output-tuning')?.addEventListener('click', saveSettingsForm);
 
@@ -1817,20 +2062,40 @@ function setupCalibration(){
         setCalibration(255, 176, 176, 112);
     });
 
+    document.getElementById('cct-screen-white')?.addEventListener('click', () => {
+        document.querySelector('[name="cctWarmKelvin"]').value = 3000;
+        document.querySelector('[name="cctColdKelvin"]').value = 6500;
+        document.querySelector('[name="cctTargetKelvin"]').value = 6500;
+        setTuningValue('outputWarmWhite', getTuningValue('outputWarmWhite'));
+        setTuningValue('outputColdWhite', 255);
+        scheduleCorrectedPreview();
+    });
+
+    document.getElementById('cct-cold-only')?.addEventListener('click', () => {
+        document.querySelector('[name="cctTargetKelvin"]').value = document.querySelector('[name="cctColdKelvin"]').value || 6500;
+        setTuningValue('outputWarmWhite', 0);
+        setTuningValue('outputColdWhite', 255);
+        scheduleCorrectedPreview();
+    });
+
     document.querySelectorAll('[data-raw-test]').forEach((button) => {
         button.addEventListener('click', async () => {
             const body = new URLSearchParams({
                 r: button.dataset.r || '0',
                 g: button.dataset.g || '0',
                 b: button.dataset.b || '0',
-                w: button.dataset.w || '0'
+                w: button.dataset.w || '0',
+                ww: button.dataset.ww || '0',
+                cw: button.dataset.cw || '0'
             });
 
             updateOutputPreview('Raw preview', [
                 body.get('r'),
                 body.get('g'),
                 body.get('b'),
-                body.get('w')
+                body.get('w'),
+                body.get('ww'),
+                body.get('cw')
             ]);
             button.setAttribute('aria-busy', 'true');
             try {
@@ -2337,6 +2602,7 @@ async function startFactoryReset() {
     isUpdating = true;
     const statusArea = document.getElementById('ota_status_area');
     const statusText = document.getElementById('ota_status_text');
+    const resetStatus = document.getElementById('factory_reset_status');
     const progress = document.getElementById('ota_progress');
     const installBtn = document.getElementById('install_update_btn');
     const checkBtn = document.getElementById('check_update_btn');
@@ -2348,16 +2614,22 @@ async function startFactoryReset() {
     if (checkBtn) checkBtn.disabled = true;
     if (resetBtn) resetBtn.disabled = true;
     if (statusText) statusText.innerText = "Wiping settings...";
+    if (resetStatus) {
+        resetStatus.style.display = 'block';
+        resetStatus.innerText = "Wiping settings...";
+    }
 
     try {
         const res = await fetch('/api/factory_reset', { method: 'POST' });
         if (!res.ok) throw new Error(`Reset failed: ${res.status}`);
         if (statusText) statusText.innerText = "Factory reset complete. Rebooting...";
+        if (resetStatus) resetStatus.innerText = "Factory reset complete. Rebooting...";
         showToast(true);
     }
     catch (err) {
         isUpdating = false;
         if (statusText) statusText.innerText = `Factory reset failed: ${err.message}`;
+        if (resetStatus) resetStatus.innerText = `Factory reset failed: ${err.message}`;
         if (checkBtn) checkBtn.disabled = false;
         if (resetBtn) resetBtn.disabled = false;
     }

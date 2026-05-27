@@ -58,6 +58,32 @@ function setupPinValidator() {
 
     function setupSegments() {
         const isSpi = els.type.value == "2";
+        const isAnalog = els.type.value == "3";
+        const analogPinMap = document.getElementById('analogPinMap');
+
+        if (isAnalog) {
+            els.segContainer.innerHTML = '';
+            els.addSegBtn.style.display = 'none';
+            els.addSegBtn.onclick = null;
+            const numLedsLabel = document.getElementById('numLedsLabel');
+            if (numLedsLabel && numLedsLabel.firstChild) {
+                numLedsLabel.firstChild.textContent = 'Input zones to average ';
+            }
+            if (analogPinMap) {
+                analogPinMap.style.display = 'block';
+            }
+            return;
+        }
+
+        const numLedsLabel = document.getElementById('numLedsLabel');
+        if (numLedsLabel && numLedsLabel.firstChild) {
+            numLedsLabel.firstChild.textContent = 'Number of LEDs ';
+        }
+
+        if (analogPinMap) {
+            analogPinMap.style.display = 'none';
+        }
+
         const cfg = hardwareLimits[arch];
         const basePins = cfg ? (isSpi ? Object.keys(cfg.spi).map(Number) : cfg.gpio) : null;
         const allUsedPins = cfgSegments.map(s => parseInt(s.data, 10));

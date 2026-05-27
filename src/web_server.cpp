@@ -265,6 +265,12 @@ void setupWebServer(AsyncWebServer& server) {
         if (request->hasParam("outputGreenToBlue", true)) cfg.led.output.greenToBlue = constrain(request->getParam("outputGreenToBlue", true)->value().toInt(), 0, 255);
         if (request->hasParam("outputBlueToRed", true)) cfg.led.output.blueToRed = constrain(request->getParam("outputBlueToRed", true)->value().toInt(), 0, 255);
         if (request->hasParam("outputBlueToGreen", true)) cfg.led.output.blueToGreen = constrain(request->getParam("outputBlueToGreen", true)->value().toInt(), 0, 255);
+        if (request->hasParam("outputWarmWhite", true)) cfg.led.output.warmWhite = constrain(request->getParam("outputWarmWhite", true)->value().toInt(), 0, 255);
+        if (request->hasParam("outputColdWhite", true)) cfg.led.output.coldWhite = constrain(request->getParam("outputColdWhite", true)->value().toInt(), 0, 255);
+        if (request->hasParam("cctNeutralThreshold", true)) cfg.led.output.cctNeutralThreshold = constrain(request->getParam("cctNeutralThreshold", true)->value().toInt(), 0, 255);
+        if (request->hasParam("cctWarmKelvin", true)) cfg.led.output.cctWarmKelvin = constrain(request->getParam("cctWarmKelvin", true)->value().toInt(), 1000, 10000);
+        if (request->hasParam("cctColdKelvin", true)) cfg.led.output.cctColdKelvin = constrain(request->getParam("cctColdKelvin", true)->value().toInt(), 1000, 10000);
+        if (request->hasParam("cctTargetKelvin", true)) cfg.led.output.cctTargetKelvin = constrain(request->getParam("cctTargetKelvin", true)->value().toInt(), 1000, 10000);
         cfg.led.output.rgbToWhite = request->hasParam("rgbToWhiteConversion", true);
 
         const bool standaloneApMode = isAPMode();
@@ -295,6 +301,12 @@ void setupWebServer(AsyncWebServer& server) {
             }
         }
 
+        const bool ethernetEnabled = cfg.led.type == LedType::ANALOG_RGBCCT && request->hasParam("ethernetEnabled", true);
+        if (ethernetEnabled != cfg.wifi.ethernet) {
+            cfg.wifi.ethernet = ethernetEnabled;
+            needsRestart = true;
+        }
+
         Config::saveConfig(cfg);
 
         if (needsRestart) {
@@ -321,13 +333,20 @@ void setupWebServer(AsyncWebServer& server) {
         const uint8_t g = readChannel("g");
         const uint8_t b = readChannel("b");
         const uint8_t w = readChannel("w");
+        const uint8_t ww = readChannel("ww");
+        const uint8_t cw = readChannel("cw");
 
-        if (Config::cfg.led.type != LedType::SK6812 && w > 0) {
+        if (Config::cfg.led.type != LedType::SK6812 && Config::cfg.led.type != LedType::ANALOG_RGBCCT && w > 0) {
             request->send(400, mime_application_json, "{\"status\":\"unsupported\"}");
             return;
         }
 
-        Leds::testRawColor(r, g, b, w);
+        if (Config::cfg.led.type != LedType::ANALOG_RGBCCT && (ww > 0 || cw > 0)) {
+            request->send(400, mime_application_json, "{\"status\":\"unsupported\"}");
+            return;
+        }
+
+        Leds::testRawColor(r, g, b, w, ww, cw);
         request->send(200, mime_application_json, "{\"status\":\"ok\"}");
     });
 
@@ -351,8 +370,10 @@ void setupWebServer(AsyncWebServer& server) {
         const uint8_t g = readChannel("g");
         const uint8_t b = readChannel("b");
         const uint8_t w = readChannel("w");
+        const uint8_t ww = readChannel("ww");
+        const uint8_t cw = readChannel("cw");
 
-        if (Config::cfg.led.type != LedType::SK6812 && w > 0) {
+        if (Config::cfg.led.type != LedType::SK6812 && Config::cfg.led.type != LedType::ANALOG_RGBCCT && w > 0) {
             request->send(400, mime_application_json, "{\"status\":\"unsupported\"}");
             return;
         }
@@ -368,11 +389,22 @@ void setupWebServer(AsyncWebServer& server) {
         output.greenToBlue = readGain("outputGreenToBlue", output.greenToBlue);
         output.blueToRed = readGain("outputBlueToRed", output.blueToRed);
         output.blueToGreen = readGain("outputBlueToGreen", output.blueToGreen);
+        output.warmWhite = readGain("outputWarmWhite", output.warmWhite);
+        output.coldWhite = readGain("outputColdWhite", output.coldWhite);
+        output.cctNeutralThreshold = readGain("cctNeutralThreshold", output.cctNeutralThreshold);
+        if (request->hasParam("cctWarmKelvin", true)) output.cctWarmKelvin = constrain(request->getParam("cctWarmKelvin", true)->value().toInt(), 1000, 10000);
+        if (request->hasParam("cctColdKelvin", true)) output.cctColdKelvin = constrain(request->getParam("cctColdKelvin", true)->value().toInt(), 1000, 10000);
+        if (request->hasParam("cctTargetKelvin", true)) output.cctTargetKelvin = constrain(request->getParam("cctTargetKelvin", true)->value().toInt(), 1000, 10000);
         if (request->hasParam("rgbToWhiteConversion", true)) {
             output.rgbToWhite = request->getParam("rgbToWhiteConversion", true)->value().toInt() != 0;
         }
 
-        Leds::testCorrectedColor(r, g, b, w, output);
+        if (Config::cfg.led.type != LedType::ANALOG_RGBCCT && (ww > 0 || cw > 0)) {
+            request->send(400, mime_application_json, "{\"status\":\"unsupported\"}");
+            return;
+        }
+
+        Leds::testCorrectedColor(r, g, b, w, output, ww, cw);
         request->send(200, mime_application_json, "{\"status\":\"ok\"}");
     });
 
@@ -413,6 +445,12 @@ void setupWebServer(AsyncWebServer& server) {
         led["outputGreenToBlue"] = cfg.led.output.greenToBlue;
         led["outputBlueToRed"] = cfg.led.output.blueToRed;
         led["outputBlueToGreen"] = cfg.led.output.blueToGreen;
+        led["outputWarmWhite"] = cfg.led.output.warmWhite;
+        led["outputColdWhite"] = cfg.led.output.coldWhite;
+        led["cctNeutralThreshold"] = cfg.led.output.cctNeutralThreshold;
+        led["cctWarmKelvin"] = cfg.led.output.cctWarmKelvin;
+        led["cctColdKelvin"] = cfg.led.output.cctColdKelvin;
+        led["cctTargetKelvin"] = cfg.led.output.cctTargetKelvin;
         led["rgbToWhiteConversion"] = cfg.led.output.rgbToWhite;
 
 
@@ -427,6 +465,7 @@ void setupWebServer(AsyncWebServer& server) {
         led["extraMdnsTag"] = cfg.extraMdnsTag;
 
         led["ssid"] = cfg.wifi.ssid;
+        led["ethernetEnabled"] = cfg.wifi.ethernet;
 
         serializeJson(doc, *response);
         request->send(response);

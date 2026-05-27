@@ -53,14 +53,39 @@
     #define HYPERK_DEFAULT_OUTPUT_WHITE_GAIN 255
 #endif
 
+#ifndef HYPERK_DEFAULT_OUTPUT_WARM_WHITE_GAIN
+    #define HYPERK_DEFAULT_OUTPUT_WARM_WHITE_GAIN 0
+#endif
+
+#ifndef HYPERK_DEFAULT_OUTPUT_COLD_WHITE_GAIN
+    #define HYPERK_DEFAULT_OUTPUT_COLD_WHITE_GAIN 255
+#endif
+
 #ifndef HYPERK_DEFAULT_RGB_TO_WHITE_CONVERSION
     #define HYPERK_DEFAULT_RGB_TO_WHITE_CONVERSION 1
+#endif
+
+#ifndef HYPERK_DEFAULT_CCT_WARM_KELVIN
+    #define HYPERK_DEFAULT_CCT_WARM_KELVIN 3000
+#endif
+
+#ifndef HYPERK_DEFAULT_CCT_COLD_KELVIN
+    #define HYPERK_DEFAULT_CCT_COLD_KELVIN 6500
+#endif
+
+#ifndef HYPERK_DEFAULT_CCT_TARGET_KELVIN
+    #define HYPERK_DEFAULT_CCT_TARGET_KELVIN 6500
+#endif
+
+#ifndef HYPERK_DEFAULT_CCT_NEUTRAL_THRESHOLD
+    #define HYPERK_DEFAULT_CCT_NEUTRAL_THRESHOLD 24
 #endif
 
 enum class LedType : uint8_t {
     WS2812 = 0,
     SK6812 = 1,
-    APA102 = 2
+    APA102 = 2,
+    ANALOG_RGBCCT = 3
 };
 
 struct LedConfig {
@@ -121,6 +146,12 @@ struct LedConfig {
         uint8_t greenToBlue = 0;
         uint8_t blueToRed = 0;
         uint8_t blueToGreen = 0;
+        uint8_t warmWhite = HYPERK_DEFAULT_OUTPUT_WARM_WHITE_GAIN;
+        uint8_t coldWhite = HYPERK_DEFAULT_OUTPUT_COLD_WHITE_GAIN;
+        uint8_t cctNeutralThreshold = HYPERK_DEFAULT_CCT_NEUTRAL_THRESHOLD;
+        uint16_t cctWarmKelvin = HYPERK_DEFAULT_CCT_WARM_KELVIN;
+        uint16_t cctColdKelvin = HYPERK_DEFAULT_CCT_COLD_KELVIN;
+        uint16_t cctTargetKelvin = HYPERK_DEFAULT_CCT_TARGET_KELVIN;
         bool rgbToWhite = HYPERK_DEFAULT_RGB_TO_WHITE_CONVERSION != 0;
     };
 
@@ -151,6 +182,7 @@ struct AppConfig {
     struct WifiConfig {
         String ssid;
         String password;
+        bool ethernet = false;
     } wifi;
     LedConfig  led;
     String     deviceName = "hyperk";
