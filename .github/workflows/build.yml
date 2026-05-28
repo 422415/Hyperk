@@ -87,6 +87,44 @@ jobs:
           name: Hyperk-Firmware-ClassicESP
           path: release
 
+      - name: Publish browser-downloadable firmware mirror
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APP_VERSION: ${{ needs.build.outputs.app_version }}
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          mkdir firmware-downloads
+          cd firmware-downloads
+          git init
+          git remote add origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+
+          if git ls-remote --exit-code --heads origin firmware-downloads >/dev/null 2>&1; then
+            git fetch --depth 1 origin firmware-downloads
+            git checkout -B firmware-downloads FETCH_HEAD
+          else
+            git checkout --orphan firmware-downloads
+          fi
+
+          mkdir -p "releases/${APP_VERSION}"
+          cp ../release/* "releases/${APP_VERSION}/"
+          cat > "releases/${APP_VERSION}/manifest.json" <<EOF
+          {
+            "version": "${APP_VERSION}",
+            "sourceRun": "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          }
+          EOF
+
+          git add "releases/${APP_VERSION}"
+          if git diff --cached --quiet; then
+            echo "Firmware download mirror already current."
+          else
+            git commit -m "Publish firmware ${APP_VERSION}"
+            git push origin firmware-downloads
+          fi
+
       - name: Publish firmware release
         uses: softprops/action-gh-release@v3
         with:

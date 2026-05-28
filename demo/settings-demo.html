@@ -478,7 +478,7 @@ details summary[role="button"]:focus {
 
 <script>
 (() => {
-  const demoConfig = {"ssid": "Theater WiFi", "architecture": "ESP32", "board": "esp32-wled-esp32-ota-quinled-rgbw", "version": "0.0.4-quinled.13-demo", "segments": [{"data": 2, "clock": 0, "startIndex": 0}], "segmentSupported": 0, "apMode": false, "type": 3, "rgbwOrder": 1, "numLeds": 1, "relay-gpio": -1, "relay-inverted": false, "brightness": 255, "r": 255, "g": 255, "b": 0, "standbyOff": false, "effect": 0, "deviceName": "hyperk-demo", "extraMdnsTag": "wled", "ethernetEnabled": false, "calGain": 255, "calRed": 176, "calGreen": 176, "calBlue": 112, "outputRed": 255, "outputGreen": 255, "outputBlue": 255, "outputWhite": 255, "outputWarmWhite": 0, "outputColdWhite": 255, "outputRedToGreen": 0, "outputRedToBlue": 0, "outputGreenToRed": 0, "outputGreenToBlue": 0, "outputBlueToRed": 0, "outputBlueToGreen": 0, "cctNeutralThreshold": 24, "cctWarmKelvin": 3000, "cctColdKelvin": 6500, "cctTargetKelvin": 6500, "rgbToWhiteConversion": false};
+  const demoConfig = {"ssid": "Theater WiFi", "architecture": "ESP32", "board": "esp32-wled-esp32-ota-quinled-rgbw", "version": "0.0.4-quinled.14-demo", "segments": [{"data": 2, "clock": 0, "startIndex": 0}], "segmentSupported": 0, "apMode": false, "type": 3, "rgbwOrder": 1, "numLeds": 1, "relay-gpio": -1, "relay-inverted": false, "brightness": 255, "r": 255, "g": 255, "b": 0, "standbyOff": false, "effect": 0, "deviceName": "hyperk-demo", "extraMdnsTag": "wled", "ethernetEnabled": false, "calGain": 255, "calRed": 176, "calGreen": 176, "calBlue": 112, "outputRed": 255, "outputGreen": 255, "outputBlue": 255, "outputWhite": 255, "outputWarmWhite": 0, "outputColdWhite": 255, "outputRedToGreen": 0, "outputRedToBlue": 0, "outputGreenToRed": 0, "outputGreenToBlue": 0, "outputBlueToRed": 0, "outputBlueToGreen": 0, "cctNeutralThreshold": 24, "cctWarmKelvin": 3000, "cctColdKelvin": 6500, "cctTargetKelvin": 6500, "rgbToWhiteConversion": false};
   const nativeFetch = window.fetch ? window.fetch.bind(window) : null;
 
   function jsonResponse(data, status = 200) {
@@ -1124,7 +1124,7 @@ details summary[role="button"]:focus {
               console.log(`Loading module: ${scriptName}`);
 
               const script = document.createElement('script');
-              script.src = `/${scriptName}.js?v=0.0.4-quinled.13`;
+              script.src = `/${scriptName}.js?v=0.0.4-quinled.14`;
 
               script.onload = () => {
                   loadedScripts[scriptName] = true;
@@ -2283,6 +2283,7 @@ let updateCase = null;
 let isUpdating = false;
 let resolveConfirm;
 const releasesApiUrl = "https://api.github.com/repos/422415/Hyperk/releases";
+const firmwareDownloadBaseUrl = "https://raw.githubusercontent.com/422415/Hyperk/firmware-downloads/releases";
 
 function customConfirm(msg) {
     const modal = document.getElementById('confirm-modal');
@@ -2314,6 +2315,10 @@ function firmwareNameMatchesBoard(fileName, boardName) {
     return !arch || lowerFileName.indexOf(`${arch}.`) >= 0;
 }
 
+function buildFirmwareDownloadUrl(version, fileName) {
+    return `${firmwareDownloadBaseUrl}/${encodeURIComponent(version)}/${encodeURIComponent(fileName)}`;
+}
+
 async function checkFirmwareUpdates() {
     const statusArea = document.getElementById('ota_status_area');
     const statusText = document.getElementById('ota_status_text');
@@ -2335,11 +2340,11 @@ async function checkFirmwareUpdates() {
     try {
         let res = await fetch(releasesApiUrl);
         if (!res.ok) throw new Error(`GitHub API status: ${res.status}`);
-        console.log("✅ Data from Worker Proxy");
+        console.log("Fetched release metadata from GitHub.");
         releases = await res.json();
     }
     catch (err) {
-        console.warn("⚠️ Worker failed, falling back to GitHub API...", err);
+        console.warn("Release fetch failed, retrying...", err);
         try {
             let res = await fetch(releasesApiUrl);
             if (!res.ok) throw new Error(`GitHub API status: ${res.status}`);
@@ -2420,8 +2425,7 @@ async function checkFirmwareUpdates() {
         installBtn.innerText = "Install Update";
     }
 
-    const proxyBase = "https://hyperhdr-github-proxy.hyperhdr.workers.dev/?url=";
-    otaFirmwareUrl = proxyBase + encodeURIComponent(asset.browser_download_url);
+    otaFirmwareUrl = buildFirmwareDownloadUrl(latest.tag_name, asset.name);
 };
 
 async function startOtaUpdate() {
@@ -2448,7 +2452,7 @@ async function startOtaUpdate() {
 
     try {
         const res = await fetch(otaFirmwareUrl);
-        if (!res.ok) throw new Error(`Proxy error: ${res.status} ${res.statusText}`);
+        if (!res.ok) throw new Error(`Download error: ${res.status} ${res.statusText}`);
         const blob = await res.blob();
         console.log(`ℹ️ Firmware size: ${blob.size} "bytes`);
 

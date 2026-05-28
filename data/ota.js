@@ -7,6 +7,7 @@ let updateCase = null;
 let isUpdating = false;
 let resolveConfirm;
 const releasesApiUrl = "https://api.github.com/repos/422415/Hyperk/releases";
+const firmwareDownloadBaseUrl = "https://raw.githubusercontent.com/422415/Hyperk/firmware-downloads/releases";
 
 function customConfirm(msg) {
     const modal = document.getElementById('confirm-modal');
@@ -38,6 +39,10 @@ function firmwareNameMatchesBoard(fileName, boardName) {
     return !arch || lowerFileName.indexOf(`${arch}.`) >= 0;
 }
 
+function buildFirmwareDownloadUrl(version, fileName) {
+    return `${firmwareDownloadBaseUrl}/${encodeURIComponent(version)}/${encodeURIComponent(fileName)}`;
+}
+
 async function checkFirmwareUpdates() {
     const statusArea = document.getElementById('ota_status_area');
     const statusText = document.getElementById('ota_status_text');
@@ -59,11 +64,11 @@ async function checkFirmwareUpdates() {
     try {
         let res = await fetch(releasesApiUrl);
         if (!res.ok) throw new Error(`GitHub API status: ${res.status}`);
-        console.log("✅ Data from Worker Proxy");
+        console.log("Fetched release metadata from GitHub.");
         releases = await res.json();
     } 
     catch (err) {
-        console.warn("⚠️ Worker failed, falling back to GitHub API...", err);
+        console.warn("Release fetch failed, retrying...", err);
         try {
             let res = await fetch(releasesApiUrl);
             if (!res.ok) throw new Error(`GitHub API status: ${res.status}`);
@@ -144,8 +149,7 @@ async function checkFirmwareUpdates() {
         installBtn.innerText = "Install Update";
     }
 
-    const proxyBase = "https://hyperhdr-github-proxy.hyperhdr.workers.dev/?url=";
-    otaFirmwareUrl = proxyBase + encodeURIComponent(asset.browser_download_url);
+    otaFirmwareUrl = buildFirmwareDownloadUrl(latest.tag_name, asset.name);
 };   
 
 async function startOtaUpdate() {
@@ -172,7 +176,7 @@ async function startOtaUpdate() {
 
     try {
         const res = await fetch(otaFirmwareUrl);
-        if (!res.ok) throw new Error(`Proxy error: ${res.status} ${res.statusText}`);
+        if (!res.ok) throw new Error(`Download error: ${res.status} ${res.statusText}`);
         const blob = await res.blob();
         console.log(`ℹ️ Firmware size: ${blob.size} "bytes`);
 
