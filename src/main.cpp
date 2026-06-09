@@ -62,6 +62,24 @@ namespace {
 
     bool inAPMode = false;
     bool hasEthernet = false; 
+
+    #if defined(ARDUINO_ARCH_ESP32) && defined(WEBSERVER_USE_ETHERNET)
+        #ifndef ETH_PHY_POWER
+            #define ETH_PHY_POWER -1
+        #endif
+        #ifndef ESP_ARDUINO_VERSION_MAJOR
+            #define ESP_ARDUINO_VERSION_MAJOR 2
+        #endif
+
+        bool beginEthernet()
+        {
+            #if ESP_ARDUINO_VERSION_MAJOR >= 3
+                return ETH.begin(ETH_PHY_TYPE, ETH_PHY_ADDR, ETH_PHY_MDC, ETH_PHY_MDIO, ETH_PHY_POWER, ETH_CLK_MODE);
+            #else
+                return ETH.begin(ETH_PHY_ADDR, ETH_PHY_POWER, ETH_PHY_MDC, ETH_PHY_MDIO, ETH_PHY_TYPE, ETH_CLK_MODE);
+            #endif
+        }
+    #endif
 }
 
 void startAP() {
@@ -98,34 +116,38 @@ void setup() {
     #endif
 
     Config::loadConfig();
+    const AppConfig& cfg = Config::cfg;
 
     Leds::applyLedConfig();
 
-    const AppConfig& cfg = Config::cfg;
 
     #ifdef WEBSERVER_USE_ETHERNET
         const bool shouldUseEthernet = cfg.wifi.ethernet && cfg.led.type == LedType::ANALOG_RGBCCT;
         if (shouldUseEthernet) {
-            ETH.begin();
-
-        unsigned long timeout = millis() + 8000;
-        while (millis() < timeout) {
-            if (auto localIp = ETH.localIP(); localIp != IPAddress(0, 0, 0, 0)) {
-                Log::debug("Ethernet Connected → ", localIp.toString());
-                hasEthernet = true;
-                break;
+            Log::debug("Starting Ethernet...");
+            if (!beginEthernet()) {
+                Log::debug("Ethernet startup failed. Starting WiFi fallback...");
             }
-            if (millis() > (timeout - 5000) && !ETH.linkUp()) {
-                Log::debug("The cable is disconnected. Give up waiting for ethernet connection.");
-                break;
+            else {
+                unsigned long timeout = millis() + 8000;
+                while (millis() < timeout) {
+                    if (auto localIp = ETH.localIP(); localIp != IPAddress(0, 0, 0, 0)) {
+                        Log::debug("Ethernet Connected -> ", localIp.toString());
+                        hasEthernet = true;
+                        break;
+                    }
+                    if (millis() > (timeout - 5000) && !ETH.linkUp()) {
+                        Log::debug("The cable is disconnected. Give up waiting for ethernet connection.");
+                        break;
+                    }
+                    delay(500);
+                    Log::debug(".");
+                }
             }
-            delay(500);
-            Log::debug(".");    
-        }
 
-        if (!hasEthernet) {
-            Log::debug("Starting WiFi Fallback...");
-        }
+            if (!hasEthernet) {
+                Log::debug("Starting WiFi Fallback...");
+            }
         }
     #endif
     
@@ -208,3 +230,4 @@ void loop()
         }
     #endif    
 }
+
