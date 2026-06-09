@@ -290,6 +290,30 @@
         </div>
       </details>
 
+      <details id="analogDemoSection" style="display: none;">
+        <summary role="button" class="outline secondary">Analog PWM Demo</summary>
+        <div>
+          <p class="tuning-note">Runs directly on the controller and temporarily overrides HyperHDR output. Use Stop demo to return to normal standby or live capture.</p>
+          <div class="analog-demo-grid">
+            <label>Demo pattern
+              <select id="analog_demo_mode">
+                <option value="1">Cold white breathing ramp</option>
+                <option value="2">Low-end cold white crawl</option>
+                <option value="3">RGB smooth crossfade</option>
+                <option value="4">Cold white step comparison</option>
+              </select>
+            </label>
+            <label>Cycle time (ms)
+              <input type="number" id="analog_demo_period" min="500" max="12000" step="100" value="3000">
+            </label>
+          </div>
+          <div class="analog-demo-actions">
+            <button type="button" onclick="startAnalogDemo()">Start demo</button>
+            <button type="button" class="secondary outline" onclick="stopAnalogDemo()">Stop demo</button>
+          </div>
+          <div id="analog_demo_status" class="analog-demo-status" style="display: none;"></div>
+        </div>
+      </details>
       <details>
         <summary role="button" class="outline secondary">Standby Light State</summary>
         <div>
@@ -616,6 +640,7 @@
           const isAnalog = document.getElementById('ledType')?.value === "3";
           const ethernetOption = document.getElementById('ethernetOption');
           const ethernetToggle = document.getElementById('ethernet-enabled-toggle');
+          const analogDemoSection = document.getElementById('analogDemoSection');
           if (ethernetOption) {
               ethernetOption.style.display = isAnalog ? 'block' : 'none';
           }
@@ -624,6 +649,50 @@
               if (!isAnalog) {
                   ethernetToggle.checked = false;
               }
+          }
+          if (analogDemoSection) {
+              analogDemoSection.style.display = isAnalog ? 'block' : 'none';
+          }
+      }
+
+      function setAnalogDemoStatus(message, isError = false) {
+          const status = document.getElementById('analog_demo_status');
+          if (!status) return;
+          status.style.display = 'block';
+          status.textContent = message;
+          status.setAttribute('aria-invalid', isError ? 'true' : 'false');
+      }
+
+      async function startAnalogDemo() {
+          const mode = document.getElementById('analog_demo_mode')?.value || '1';
+          const period = document.getElementById('analog_demo_period')?.value || '3000';
+          const body = new URLSearchParams({ mode, periodMs: period });
+          setAnalogDemoStatus('Starting analog PWM demo...');
+
+          try {
+              const res = await fetch('/api/analog_demo', { method: 'POST', body });
+              if (!res.ok) {
+                  throw new Error(`HTTP ${res.status}`);
+              }
+              setAnalogDemoStatus('Analog PWM demo running. HyperHDR output is paused until Stop demo is pressed.');
+          }
+          catch (err) {
+              setAnalogDemoStatus(`Analog PWM demo failed: ${err.message}`, true);
+          }
+      }
+
+      async function stopAnalogDemo() {
+          setAnalogDemoStatus('Stopping analog PWM demo...');
+
+          try {
+              const res = await fetch('/api/analog_demo_stop', { method: 'POST' });
+              if (!res.ok) {
+                  throw new Error(`HTTP ${res.status}`);
+              }
+              setAnalogDemoStatus('Analog PWM demo stopped. Normal output can resume.');
+          }
+          catch (err) {
+              setAnalogDemoStatus(`Stop failed: ${err.message}`, true);
           }
       }
 

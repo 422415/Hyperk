@@ -319,6 +319,33 @@ details summary[role="button"]:focus {
   cursor: pointer;
 }
 
+.analog-demo-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 0.8fr);
+  gap: 1rem;
+  align-items: end;
+}
+
+.analog-demo-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 12rem));
+  gap: 0.5rem;
+  justify-content: end;
+  margin-top: 0.5rem;
+}
+
+.analog-demo-actions button {
+  margin-bottom: 0;
+}
+
+.analog-demo-status {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--pico-form-element-border-color);
+  border-radius: var(--pico-border-radius);
+  color: var(--pico-muted-color);
+}
+
 .output-preview-panel {
   position: fixed;
   right: 1rem;
@@ -424,7 +451,9 @@ details summary[role="button"]:focus {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .tuning-grid {
+  .tuning-grid,
+  .analog-demo-grid,
+  .analog-demo-actions {
     grid-template-columns: 1fr;
   }
 

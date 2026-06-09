@@ -48,6 +48,7 @@
 #include "web_resources.h"
 #include "uni_json_api.h"
 #include "ota.h"
+#include "analog_demo.h"
 
 namespace {
     constexpr auto mime_application_json = "application/json";
@@ -157,6 +158,34 @@ void setupWebServer(AsyncWebServer& server) {
         }
     });
 
+
+    server.on("/api/analog_demo", HTTP_GET, [](AsyncWebServerRequest *request) {
+        AsyncResponseStream *response = request->beginResponseStream(mime_application_json);
+        JsonDocument doc;
+        doc["supported"] = Config::cfg.led.type == LedType::ANALOG_RGBCCT;
+        doc["active"] = AnalogDemo::active();
+        doc["mode"] = AnalogDemo::getMode();
+        doc["periodMs"] = AnalogDemo::getPeriodMs();
+        serializeJson(doc, *response);
+        request->send(response);
+    });
+
+    server.on("/api/analog_demo", HTTP_POST, [](AsyncWebServerRequest *request) {
+        if (Config::cfg.led.type != LedType::ANALOG_RGBCCT) {
+            request->send(400, mime_application_json, "{\"status\":\"unsupported\"}");
+            return;
+        }
+
+        const int mode = request->hasParam("mode", true) ? request->getParam("mode", true)->value().toInt() : 1;
+        const int periodMs = request->hasParam("periodMs", true) ? request->getParam("periodMs", true)->value().toInt() : 3000;
+        AnalogDemo::start(static_cast<uint8_t>(constrain(mode, 1, 4)), static_cast<uint16_t>(constrain(periodMs, 500, 12000)));
+        request->send(200, mime_application_json, "{\"status\":\"ok\"}");
+    });
+
+    server.on("/api/analog_demo_stop", HTTP_POST, [](AsyncWebServerRequest *request) {
+        AnalogDemo::stop();
+        request->send(200, mime_application_json, "{\"status\":\"ok\"}");
+    });
     server.on("/api/factory_reset", HTTP_POST, [](AsyncWebServerRequest *request) {
         if (!Storage::factoryReset()) {
             request->send(500, mime_application_json, "{\"status\":\"error\"}");
