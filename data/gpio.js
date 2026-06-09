@@ -61,13 +61,47 @@ function setupPinValidator() {
         const isAnalog = els.type.value == "3";
         const analogPinMap = document.getElementById('analogPinMap');
 
+        const numLedsLabel = document.getElementById('numLedsLabel');
+        const numLedsInput = numLedsLabel?.querySelector('input[name="numLeds"]');
+        const analogAverageControls = document.getElementById('analogAverageControls');
+        const disableAnalogAveraging = document.getElementById('disableAnalogAveraging');
+
+        const updateAnalogAveragingState = () => {
+            if (!numLedsInput || !disableAnalogAveraging) return;
+
+            if (disableAnalogAveraging.checked) {
+                numLedsInput.value = 0;
+                numLedsInput.readOnly = true;
+                numLedsInput.setAttribute('aria-describedby', 'analogAverageControls');
+                return;
+            }
+
+            numLedsInput.readOnly = false;
+            numLedsInput.min = 2;
+            numLedsInput.removeAttribute('aria-describedby');
+            if ((parseInt(numLedsInput.value, 10) || 0) < 2) {
+                numLedsInput.value = 2;
+            }
+        };
+
         if (isAnalog) {
             els.segContainer.innerHTML = '';
             els.addSegBtn.style.display = 'none';
             els.addSegBtn.onclick = null;
-            const numLedsLabel = document.getElementById('numLedsLabel');
             if (numLedsLabel && numLedsLabel.firstChild) {
-                numLedsLabel.firstChild.textContent = 'Input zones to average ';
+                numLedsLabel.firstChild.textContent = 'Firmware averaging zones ';
+            }
+            if (numLedsInput) {
+                numLedsInput.min = 0;
+                numLedsInput.step = 1;
+            }
+            if (disableAnalogAveraging) {
+                disableAnalogAveraging.checked = (parseInt(numLedsInput?.value, 10) || 0) <= 1;
+                disableAnalogAveraging.onchange = updateAnalogAveragingState;
+                updateAnalogAveragingState();
+            }
+            if (analogAverageControls) {
+                analogAverageControls.style.display = 'block';
             }
             if (analogPinMap) {
                 analogPinMap.style.display = 'block';
@@ -75,9 +109,23 @@ function setupPinValidator() {
             return;
         }
 
-        const numLedsLabel = document.getElementById('numLedsLabel');
         if (numLedsLabel && numLedsLabel.firstChild) {
             numLedsLabel.firstChild.textContent = 'Number of LEDs ';
+        }
+        if (numLedsInput) {
+            numLedsInput.min = 1;
+            numLedsInput.readOnly = false;
+            numLedsInput.removeAttribute('aria-describedby');
+            if ((parseInt(numLedsInput.value, 10) || 0) < 1) {
+                numLedsInput.value = 1;
+            }
+        }
+        if (disableAnalogAveraging) {
+            disableAnalogAveraging.checked = false;
+            disableAnalogAveraging.onchange = null;
+        }
+        if (analogAverageControls) {
+            analogAverageControls.style.display = 'none';
         }
 
         if (analogPinMap) {

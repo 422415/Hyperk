@@ -220,14 +220,15 @@ void setupWebServer(AsyncWebServer& server) {
             }
         }
         if (request->hasParam("numLeds", true)) {
-            uint16_t n = request->getParam("numLeds", true)->value().toInt();
-            if (n != cfg.led.numLeds && n <= MAX_LEDS)
+            const int n = request->getParam("numLeds", true)->value().toInt();
+            const int minLeds = (cfg.led.type == LedType::ANALOG_RGBCCT) ? 0 : 1;
+            if (n >= minLeds && n <= MAX_LEDS && static_cast<uint16_t>(n) != cfg.led.numLeds)
             {
                 if (Leds::restartRequired()){
                     needsRestart = true;
                 }
                                 
-                cfg.led.numLeds = n;
+                cfg.led.numLeds = static_cast<uint16_t>(n);
             }
         }
         if (request->hasParam("relay-gpio", true)) {

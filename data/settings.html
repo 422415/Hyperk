@@ -91,7 +91,16 @@
 
           <label id="numLedsLabel">Number of LEDs
             <input type="number" name="numLeds" min="1" max="2000" value="16" required>
-          </label>          
+          </label>
+          <div id="analogAverageControls" class="analog-average-controls" style="display: none;">
+            <label>
+              <input type="checkbox" id="disableAnalogAveraging" role="switch">
+              Disable firmware averaging
+            </label>
+            <small>
+              0 disables firmware averaging and uses one input zone. Values 2+ average that many HyperHDR zones into the single analog lamp output.
+            </small>
+          </div>
 
           <div id="segmentContainer">
           </div>
