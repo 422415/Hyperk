@@ -48,4 +48,11 @@ struct led_bridge
     {
         setLedRgbw(index, r, g, b, std::max(ww, cw));
     }
+
+    // 16-bit per channel entry point. Bridges that can use the extra precision
+    // (analog PWM) override this; everything else falls back to the top 8 bits.
+    virtual inline void setLedRgbcct16(int index, uint16_t r, uint16_t g, uint16_t b, uint16_t ww, uint16_t cw)
+    {
+        setLedRgbcct(index, r >> 8, g >> 8, b >> 8, ww >> 8, cw >> 8);
+    }
 };

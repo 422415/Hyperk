@@ -298,10 +298,13 @@ void setupWebServer(AsyncWebServer& server) {
         if (request->hasParam("outputWarmWhite", true)) cfg.led.output.warmWhite = constrain(request->getParam("outputWarmWhite", true)->value().toInt(), 0, 255);
         if (request->hasParam("outputColdWhite", true)) cfg.led.output.coldWhite = constrain(request->getParam("outputColdWhite", true)->value().toInt(), 0, 255);
         if (request->hasParam("cctNeutralThreshold", true)) cfg.led.output.cctNeutralThreshold = constrain(request->getParam("cctNeutralThreshold", true)->value().toInt(), 0, 255);
+        if (request->hasParam("cctNeutralFeather", true)) cfg.led.output.cctNeutralFeather = constrain(request->getParam("cctNeutralFeather", true)->value().toInt(), 0, 255);
         if (request->hasParam("cctWarmKelvin", true)) cfg.led.output.cctWarmKelvin = constrain(request->getParam("cctWarmKelvin", true)->value().toInt(), 1000, 10000);
         if (request->hasParam("cctColdKelvin", true)) cfg.led.output.cctColdKelvin = constrain(request->getParam("cctColdKelvin", true)->value().toInt(), 1000, 10000);
         if (request->hasParam("cctTargetKelvin", true)) cfg.led.output.cctTargetKelvin = constrain(request->getParam("cctTargetKelvin", true)->value().toInt(), 1000, 10000);
         cfg.led.output.rgbToWhite = request->hasParam("rgbToWhiteConversion", true);
+        if (request->hasParam("analogGamma", true)) cfg.led.output.analogGamma = constrain(request->getParam("analogGamma", true)->value().toFloat(), 1.0f, 3.0f);
+        cfg.led.output.analogDither = request->hasParam("analogDither", true);
 
         const bool standaloneApMode = isAPMode();
 
@@ -478,10 +481,14 @@ void setupWebServer(AsyncWebServer& server) {
         led["outputWarmWhite"] = cfg.led.output.warmWhite;
         led["outputColdWhite"] = cfg.led.output.coldWhite;
         led["cctNeutralThreshold"] = cfg.led.output.cctNeutralThreshold;
+        led["cctNeutralFeather"] = cfg.led.output.cctNeutralFeather;
         led["cctWarmKelvin"] = cfg.led.output.cctWarmKelvin;
         led["cctColdKelvin"] = cfg.led.output.cctColdKelvin;
         led["cctTargetKelvin"] = cfg.led.output.cctTargetKelvin;
         led["rgbToWhiteConversion"] = cfg.led.output.rgbToWhite;
+        led["analogGamma"] = cfg.led.output.analogGamma;
+        led["analogDither"] = cfg.led.output.analogDither;
+        led["ddp16"] = true;   // accepts 16-bit DDP color (types 0x0C / 0x1C)
 
 
         led["brightness"] = cfg.led.brightness;

@@ -198,12 +198,23 @@ function updateCorrectedOutputPreview(params) {
         if (params.get('rgbToWhiteConversion') !== '0' && outW === 0 && outWw === 0 && outCw === 0) {
             const sharedWhite = Math.min(outR, outG, outB);
             const maxRgb = Math.max(outR, outG, outB);
+            const diff = maxRgb - sharedWhite;
             const threshold = getNumberParam(params, 'cctNeutralThreshold', 24);
-            if ((maxRgb - sharedWhite) <= threshold) {
-                outW = scaledChannel(sharedWhite, params.get('outputWhite'));
-                outR -= sharedWhite;
-                outG -= sharedWhite;
-                outB -= sharedWhite;
+            const feather = getNumberParam(params, 'cctNeutralFeather', 16);
+            // Feathered extraction (mirrors firmware): full inside the
+            // threshold, fading to none across the feather band above it.
+            let weight = 0;
+            if (diff <= threshold) {
+                weight = 1;
+            } else if (feather > 0 && diff < threshold + feather) {
+                weight = (threshold + feather - diff) / feather;
+            }
+            if (weight > 0) {
+                const extracted = sharedWhite * weight;
+                outW = scaledChannel(extracted, params.get('outputWhite'));
+                outR -= extracted;
+                outG -= extracted;
+                outB -= extracted;
             }
         }
 
@@ -255,6 +266,7 @@ function collectTuningParams() {
         outputBlueToRed: getTuningValue('outputBlueToRed'),
         outputBlueToGreen: getTuningValue('outputBlueToGreen'),
         cctNeutralThreshold: document.querySelector('[name="cctNeutralThreshold"]')?.value || '24',
+        cctNeutralFeather: document.querySelector('[name="cctNeutralFeather"]')?.value || '16',
         cctWarmKelvin: document.querySelector('[name="cctWarmKelvin"]')?.value || '3000',
         cctColdKelvin: document.querySelector('[name="cctColdKelvin"]')?.value || '6500',
         cctTargetKelvin: document.querySelector('[name="cctTargetKelvin"]')?.value || '6500',
@@ -358,7 +370,7 @@ function setupTuningControls() {
     });
 
     document.querySelector('[name="rgbToWhiteConversion"]')?.addEventListener('change', scheduleCorrectedPreview);
-    document.querySelectorAll('[name="cctNeutralThreshold"], [name="cctWarmKelvin"], [name="cctColdKelvin"], [name="cctTargetKelvin"]').forEach((control) => {
+    document.querySelectorAll('[name="cctNeutralThreshold"], [name="cctNeutralFeather"], [name="cctWarmKelvin"], [name="cctColdKelvin"], [name="cctTargetKelvin"]').forEach((control) => {
         control.addEventListener('input', scheduleCorrectedPreview);
     });
     document.getElementById('reset-output-tuning')?.addEventListener('click', resetOutputTuning);
