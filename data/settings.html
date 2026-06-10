@@ -153,8 +153,20 @@
               <label>Cold LED K <input type="number" name="cctColdKelvin" min="1000" max="10000" value="6500"></label>
               <label>Target white K <input type="number" name="cctTargetKelvin" min="1000" max="10000" value="6500"></label>
               <label>Neutral threshold <input type="number" name="cctNeutralThreshold" min="0" max="255" value="24"></label>
+              <label>Neutral feather <input type="number" name="cctNeutralFeather" min="0" max="255" value="16"></label>
               <button type="button" id="cct-screen-white">Set 6500K</button>
               <button type="button" id="cct-cold-only">Cold Only</button>
+            </div>
+            <p class="tuning-note">Feather softens the white-extraction edge above the threshold so slowly drifting near-neutral colors never jump between the RGB and white channels. 0 = hard edge (legacy).</p>
+
+            <h5>Analog PWM quality</h5>
+            <p class="tuning-note">Gamma 2.2 maps the 16-bit pipeline onto the PWM perceptually — smooth dim scenes, no dark-end banding. 1.0 = legacy linear response (use this to keep an old calibration). Hardware dithering adds ~4 effective bits using the ESP32's fractional-duty dither at full PWM rate (invisible, flicker-free).</p>
+            <div class="calibration-grid analog-cct-grid">
+              <label>PWM gamma <input type="number" name="analogGamma" min="1" max="3" step="0.05" value="2.2"></label>
+              <label class="white-mixer-control">
+                <input type="checkbox" name="analogDither" role="switch" checked>
+                Hardware dithering
+              </label>
             </div>
           </div>
 
@@ -575,7 +587,7 @@
                   fwInfo.innerHTML = `<strong>${cfgDeviceVersion || 'unknown'}</strong> <small style="opacity:0.75">(${cfgDeviceArchitecture || '—'})</small>`;
               }
 
-              const fields = ['type', 'rgbwOrder', 'numLeds', 'relay-gpio', 'relay-inverted', 'brightness', 'r', 'g', 'b', 'standbyOff', 'effect', 'deviceName', 'extraMdnsTag', 'ethernetEnabled', 'calGain', 'calRed', 'calGreen', 'calBlue', 'outputRed', 'outputGreen', 'outputBlue', 'outputWhite', 'outputWarmWhite', 'outputColdWhite', 'outputRedToGreen', 'outputRedToBlue', 'outputGreenToRed', 'outputGreenToBlue', 'outputBlueToRed', 'outputBlueToGreen', 'cctNeutralThreshold', 'cctWarmKelvin', 'cctColdKelvin', 'cctTargetKelvin', 'rgbToWhiteConversion'];
+              const fields = ['type', 'rgbwOrder', 'numLeds', 'relay-gpio', 'relay-inverted', 'brightness', 'r', 'g', 'b', 'standbyOff', 'effect', 'deviceName', 'extraMdnsTag', 'ethernetEnabled', 'calGain', 'calRed', 'calGreen', 'calBlue', 'outputRed', 'outputGreen', 'outputBlue', 'outputWhite', 'outputWarmWhite', 'outputColdWhite', 'outputRedToGreen', 'outputRedToBlue', 'outputGreenToRed', 'outputGreenToBlue', 'outputBlueToRed', 'outputBlueToGreen', 'cctNeutralThreshold', 'cctNeutralFeather', 'cctWarmKelvin', 'cctColdKelvin', 'cctTargetKelvin', 'rgbToWhiteConversion', 'analogGamma', 'analogDither'];
               fields.forEach(field => {
                   const el = document.querySelector(`[name="${field}"]`);
                   if (el && l[field] !== undefined){       

@@ -20,7 +20,7 @@
     R"raw("nl":{"on":false,"dur":60,"mode":1,"tbri":0},)raw" \
     R"raw("udpn":{"send":false,"recv":false}},)raw" \
     R"raw("info":{)raw" \
-    R"raw("ver":"0.15.3","vid":2508020,"cn":"######################","name":"###############","mac":"############","arch":"###########","uptime":############,"live":#####,"freeheap":########,)raw" \
+    R"raw("ver":"0.15.3","vid":2508020,"cn":"######################","name":"###############","mac":"############","arch":"###########","uptime":############,"live":#####,"h16":#####,"freeheap":########,)raw" \
     R"raw("leds":{"count":######,"maxseg":1,"lc":1,"seglc":[1],"cct":0,"wv":0,"maxpwr":0,"rgbw":#####},)raw" \
     R"raw("wifi":{"rssi":######,"signal":####,"channel":###},)raw" \
     R"raw("fs":{"u":16,"t":61,"pmt":0}},)raw" \
@@ -61,6 +61,7 @@ static constexpr int P_SIG   = getTokenPos("\"signal\":");
 static constexpr int P_CH    = getTokenPos("\"channel\":");
 static constexpr int P_RGBW  = getTokenPos("\"rgbw\":");
 static constexpr int P_LIVE  = getTokenPos("\"live\":");
+static constexpr int P_H16   = getTokenPos("\"h16\":");
 static constexpr int P_FREEH = getTokenPos("\"freeheap\":");
 
 void fWrite(char* b, int p, int l, int32_t vv) {    
@@ -207,6 +208,9 @@ void uniConfigJsonResponse(AsyncWebServerRequest *request)
 
     // Live
     bWrite(b, P_LIVE, Volatile::state.live);
+
+    // 16-bit DDP color support (types 0x0C / 0x1C)
+    bWrite(b, P_H16, true);
 
     // RGBW capabilities
     bWrite(b, P_RGBW, (cfg.led.type == LedType::SK6812));

@@ -95,10 +95,13 @@ namespace Storage {
         cfg.led.output.warmWhite  = doc["output"]["warmWhite"]  | cfg.led.output.warmWhite;
         cfg.led.output.coldWhite  = doc["output"]["coldWhite"]  | cfg.led.output.coldWhite;
         cfg.led.output.cctNeutralThreshold = doc["output"]["cctNeutralThreshold"] | cfg.led.output.cctNeutralThreshold;
+        cfg.led.output.cctNeutralFeather = doc["output"]["cctNeutralFeather"] | cfg.led.output.cctNeutralFeather;
         cfg.led.output.cctWarmKelvin = doc["output"]["cctWarmKelvin"] | cfg.led.output.cctWarmKelvin;
         cfg.led.output.cctColdKelvin = doc["output"]["cctColdKelvin"] | cfg.led.output.cctColdKelvin;
         cfg.led.output.cctTargetKelvin = doc["output"]["cctTargetKelvin"] | cfg.led.output.cctTargetKelvin;
         cfg.led.output.rgbToWhite = doc["output"]["rgbToWhite"] | cfg.led.output.rgbToWhite;
+        cfg.led.output.analogGamma = doc["output"]["analogGamma"] | cfg.led.output.analogGamma;
+        cfg.led.output.analogDither = doc["output"]["analogDither"] | cfg.led.output.analogDither;
 
         cfg.led.calibration.gain  = doc["calibration"]["gain"]  | 0xFF;
         cfg.led.calibration.red   = doc["calibration"]["red"]   | 0xA0;
@@ -148,10 +151,13 @@ namespace Storage {
         doc["output"]["warmWhite"]  = cfg.led.output.warmWhite;
         doc["output"]["coldWhite"]  = cfg.led.output.coldWhite;
         doc["output"]["cctNeutralThreshold"] = cfg.led.output.cctNeutralThreshold;
+        doc["output"]["cctNeutralFeather"] = cfg.led.output.cctNeutralFeather;
         doc["output"]["cctWarmKelvin"] = cfg.led.output.cctWarmKelvin;
         doc["output"]["cctColdKelvin"] = cfg.led.output.cctColdKelvin;
         doc["output"]["cctTargetKelvin"] = cfg.led.output.cctTargetKelvin;
         doc["output"]["rgbToWhite"] = cfg.led.output.rgbToWhite;
+        doc["output"]["analogGamma"] = cfg.led.output.analogGamma;
+        doc["output"]["analogDither"] = cfg.led.output.analogDither;
 
         doc["calibration"]["gain"]  = cfg.led.calibration.gain;
         doc["calibration"]["red"]   = cfg.led.calibration.red;

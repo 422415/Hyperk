@@ -218,13 +218,135 @@ namespace Leds{
         return static_cast<uint8_t>(v > 255 ? 255 : v);
     }
 
-    struct ColorRgbcct {
-        uint8_t R;
-        uint8_t G;
-        uint8_t B;
-        uint8_t WW;
-        uint8_t CW;
+    // ------- 16-bit pipeline (ANALOG_RGBCCT) -------
+    // The analog PWM output has 12(+4 dither) bits of duty resolution, so the
+    // whole mix runs at 16 bits per channel; 8-bit callers are widened with
+    // v * 257 so full scale maps to full scale.
+
+    inline uint16_t to16(uint8_t v)
+    {
+        return static_cast<uint16_t>(v) * 257;
+    }
+
+    inline uint16_t scaleGain16(uint16_t v, uint8_t gain)
+    {
+        return (static_cast<uint32_t>(v) * gain + 127) / 255;
+    }
+
+    inline uint16_t scaleBri16(uint16_t v)
+    {
+        return (static_cast<uint32_t>(v) * briPlus) >> 8;
+    }
+
+    inline uint16_t clampChannel16(uint32_t v)
+    {
+        return static_cast<uint16_t>(v > 65535 ? 65535 : v);
+    }
+
+    struct ColorRgbw16 {
+        uint16_t R;
+        uint16_t G;
+        uint16_t B;
+        uint16_t W;
     };
+
+    struct ColorRgbcct16 {
+        uint16_t R;
+        uint16_t G;
+        uint16_t B;
+        uint16_t WW;
+        uint16_t CW;
+    };
+
+    inline ColorRgbw16 applyOutputMix16(uint16_t r, uint16_t g, uint16_t b, uint16_t w, const LedConfig::OutputCorrection& output)
+    {
+        return {
+            clampChannel16(static_cast<uint32_t>(scaleGain16(r, output.red)) + scaleGain16(g, output.greenToRed) + scaleGain16(b, output.blueToRed)),
+            clampChannel16(static_cast<uint32_t>(scaleGain16(g, output.green)) + scaleGain16(r, output.redToGreen) + scaleGain16(b, output.blueToGreen)),
+            clampChannel16(static_cast<uint32_t>(scaleGain16(b, output.blue)) + scaleGain16(r, output.redToBlue) + scaleGain16(g, output.greenToBlue)),
+            scaleGain16(w, output.white)
+        };
+    }
+
+    inline void splitWhiteToCct16(uint16_t w, const LedConfig::OutputCorrection& output, uint16_t& ww, uint16_t& cw)
+    {
+        const uint16_t warmKelvin = constrain(output.cctWarmKelvin, static_cast<uint16_t>(1000), static_cast<uint16_t>(10000));
+        const uint16_t coldKelvin = constrain(output.cctColdKelvin, static_cast<uint16_t>(1000), static_cast<uint16_t>(10000));
+
+        if (warmKelvin >= coldKelvin)
+        {
+            ww = scaleGain16(w, output.warmWhite);
+            cw = 0;
+            return;
+        }
+
+        const uint16_t targetKelvin = constrain(output.cctTargetKelvin, warmKelvin, coldKelvin);
+        const uint32_t warmWeight = static_cast<uint32_t>(coldKelvin - targetKelvin) * 255 / (coldKelvin - warmKelvin);
+        const uint32_t coldWeight = 255 - warmWeight;
+
+        ww = scaleGain16(static_cast<uint16_t>((static_cast<uint32_t>(w) * warmWeight + 127) / 255), output.warmWhite);
+        cw = scaleGain16(static_cast<uint16_t>((static_cast<uint32_t>(w) * coldWeight + 127) / 255), output.coldWhite);
+    }
+
+    inline ColorRgbcct16 applyAnalogOutputMix16(uint16_t r, uint16_t g, uint16_t b, uint16_t w, uint16_t ww, uint16_t cw, const LedConfig::OutputCorrection& output)
+    {
+        ColorRgbw16 mixed = applyOutputMix16(r, g, b, w, output);
+
+        if (output.rgbToWhite && mixed.W == 0 && ww == 0 && cw == 0)
+        {
+            // Feathered RGB->white extraction: full inside the neutral
+            // threshold, fading to none over the feather band above it, so a
+            // slowly drifting near-neutral color never JUMPS between the RGB
+            // and white channels (the old hard threshold was a visible cliff).
+            const uint16_t minRgb = min(mixed.R, min(mixed.G, mixed.B));
+            const uint16_t maxRgb = max(mixed.R, max(mixed.G, mixed.B));
+            const uint16_t diff = maxRgb - minRgb;
+            const uint32_t threshold = to16(output.cctNeutralThreshold);
+            const uint32_t feather = to16(output.cctNeutralFeather);
+
+            uint32_t weight = 0;                                  // 0..255
+            if (diff <= threshold) {
+                weight = 255;
+            }
+            else if (feather > 0 && diff < threshold + feather) {
+                weight = (threshold + feather - diff) * 255 / feather;
+            }
+
+            if (weight > 0) {
+                const uint16_t extracted = static_cast<uint32_t>(minRgb) * weight / 255;
+                mixed.R -= extracted;
+                mixed.G -= extracted;
+                mixed.B -= extracted;
+                mixed.W = scaleGain16(extracted, output.white);
+            }
+        }
+
+        uint16_t splitWw = 0;
+        uint16_t splitCw = 0;
+        splitWhiteToCct16(mixed.W, output, splitWw, splitCw);
+
+        return {
+            mixed.R,
+            mixed.G,
+            mixed.B,
+            clampChannel16(static_cast<uint32_t>(scaleGain16(ww, output.warmWhite)) + splitWw),
+            clampChannel16(static_cast<uint32_t>(scaleGain16(cw, output.coldWhite)) + splitCw)
+        };
+    }
+
+    template<bool applyBrightness>
+    inline void setLedAnalog16(int index, uint16_t r, uint16_t g, uint16_t b, uint16_t w)
+    {
+        if constexpr (applyBrightness) {
+            r = scaleBri16(r);
+            g = scaleBri16(g);
+            b = scaleBri16(b);
+            w = scaleBri16(w);
+        }
+
+        const ColorRgbcct16 converted = applyAnalogOutputMix16(r, g, b, w, 0, 0, Config::cfg.led.output);
+        renderer.setLedRgbcct16(index, converted.R, converted.G, converted.B, converted.WW, converted.CW);
+    }
 
     inline ColorRgbw applyOutputMix(uint8_t r, uint8_t g, uint8_t b, uint8_t w, const LedConfig::OutputCorrection& output)
     {
@@ -236,74 +358,24 @@ namespace Leds{
         };
     }
 
-    inline void splitWhiteToCct(uint8_t w, const LedConfig::OutputCorrection& output, uint8_t& ww, uint8_t& cw)
-    {
-        const uint16_t warmKelvin = constrain(output.cctWarmKelvin, static_cast<uint16_t>(1000), static_cast<uint16_t>(10000));
-        const uint16_t coldKelvin = constrain(output.cctColdKelvin, static_cast<uint16_t>(1000), static_cast<uint16_t>(10000));
-
-        if (warmKelvin >= coldKelvin)
-        {
-            ww = scaleGain(w, output.warmWhite);
-            cw = 0;
-            return;
-        }
-
-        const uint16_t targetKelvin = constrain(output.cctTargetKelvin, warmKelvin, coldKelvin);
-        const uint32_t warmWeight = static_cast<uint32_t>(coldKelvin - targetKelvin) * 255 / (coldKelvin - warmKelvin);
-        const uint32_t coldWeight = 255 - warmWeight;
-
-        ww = scaleGain(static_cast<uint8_t>((static_cast<uint16_t>(w) * warmWeight + 127) / 255), output.warmWhite);
-        cw = scaleGain(static_cast<uint8_t>((static_cast<uint16_t>(w) * coldWeight + 127) / 255), output.coldWhite);
-    }
-
-    inline ColorRgbcct applyAnalogOutputMix(uint8_t r, uint8_t g, uint8_t b, uint8_t w, uint8_t ww, uint8_t cw, const LedConfig::OutputCorrection& output)
-    {
-        ColorRgbw mixed = applyOutputMix(r, g, b, w, output);
-
-        if (output.rgbToWhite && mixed.W == 0 && ww == 0 && cw == 0)
-        {
-            const uint8_t minRgb = min(mixed.R, min(mixed.G, mixed.B));
-            const uint8_t maxRgb = max(mixed.R, max(mixed.G, mixed.B));
-            if ((maxRgb - minRgb) <= output.cctNeutralThreshold)
-            {
-                mixed.R -= minRgb;
-                mixed.G -= minRgb;
-                mixed.B -= minRgb;
-                mixed.W = scaleGain(minRgb, output.white);
-            }
-        }
-
-        uint8_t splitWw = 0;
-        uint8_t splitCw = 0;
-        splitWhiteToCct(mixed.W, output, splitWw, splitCw);
-
-        return {
-            mixed.R,
-            mixed.G,
-            mixed.B,
-            clampChannel(scaleGain(ww, output.warmWhite) + splitWw),
-            clampChannel(scaleGain(cw, output.coldWhite) + splitCw)
-        };
-    }
-
     template<bool applyBrightness>
     void setLed(int index, uint8_t r, uint8_t g, uint8_t b)
     {
+        const auto& ledCfg = Config::cfg.led;
+
+        if (ledCfg.type == LedType::ANALOG_RGBCCT)
+        {
+            setLedAnalog16<applyBrightness>(index, to16(r), to16(g), to16(b), 0);
+            return;
+        }
+
         if constexpr (applyBrightness) {
             r = scaleBri(r);
             g = scaleBri(g);
             b = scaleBri(b);
         }
 
-        const auto& ledCfg = Config::cfg.led;
         ColorRgbw mixed = applyOutputMix(r, g, b, 0, ledCfg.output);
-
-        if (ledCfg.type == LedType::ANALOG_RGBCCT)
-        {
-            const ColorRgbcct converted = applyAnalogOutputMix(r, g, b, 0, 0, 0, ledCfg.output);
-            renderer.setLedRgbcct(index, converted.R, converted.G, converted.B, converted.WW, converted.CW);
-            return;
-        }
 
         if (ledCfg.type == LedType::SK6812)
         {
@@ -325,6 +397,14 @@ namespace Leds{
     template<bool applyBrightness>
     void setLedW(int index, uint8_t r, uint8_t g, uint8_t b, uint8_t w)
     {
+        const auto& ledCfg = Config::cfg.led;
+
+        if (ledCfg.type == LedType::ANALOG_RGBCCT)
+        {
+            setLedAnalog16<applyBrightness>(index, to16(r), to16(g), to16(b), to16(w));
+            return;
+        }
+
         if constexpr (applyBrightness) {
             r = scaleBri(r);
             g = scaleBri(g);
@@ -332,18 +412,33 @@ namespace Leds{
             w = scaleBri(w);
         }
 
-        const auto& ledCfg = Config::cfg.led;
-
-        if (ledCfg.type == LedType::ANALOG_RGBCCT)
-        {
-            const ColorRgbcct converted = applyAnalogOutputMix(r, g, b, w, 0, 0, ledCfg.output);
-            renderer.setLedRgbcct(index, converted.R, converted.G, converted.B, converted.WW, converted.CW);
-            return;
-        }
-
         const ColorRgbw mixed = applyOutputMix(r, g, b, w, ledCfg.output);
 
         renderer.setLedRgbw(index, mixed.R, mixed.G, mixed.B, mixed.W);
+    }
+
+    template<bool applyBrightness>
+    void setLed16(int index, uint16_t r, uint16_t g, uint16_t b)
+    {
+        if (Config::cfg.led.type == LedType::ANALOG_RGBCCT)
+        {
+            setLedAnalog16<applyBrightness>(index, r, g, b, 0);
+            return;
+        }
+
+        setLed<applyBrightness>(index, r >> 8, g >> 8, b >> 8);
+    }
+
+    template<bool applyBrightness>
+    void setLedW16(int index, uint16_t r, uint16_t g, uint16_t b, uint16_t w)
+    {
+        if (Config::cfg.led.type == LedType::ANALOG_RGBCCT)
+        {
+            setLedAnalog16<applyBrightness>(index, r, g, b, w);
+            return;
+        }
+
+        setLedW<applyBrightness>(index, r >> 8, g >> 8, b >> 8, w >> 8);
     }
 
     void testRawColor(uint8_t r, uint8_t g, uint8_t b, uint8_t w, uint8_t ww, uint8_t cw)
@@ -351,14 +446,17 @@ namespace Leds{
         tryWaitForRenderer();
         Volatile::setRelay(r || g || b || w || ww || cw);
 
+        uint16_t ww16 = to16(ww);
+        uint16_t cw16 = to16(cw);
+        if (Config::cfg.led.type == LedType::ANALOG_RGBCCT && w > 0 && ww == 0 && cw == 0)
+        {
+            splitWhiteToCct16(to16(w), Config::cfg.led.output, ww16, cw16);
+        }
+
         for(int i = 0; i < getLedsNumber(); i++) {
             if (Config::cfg.led.type == LedType::ANALOG_RGBCCT)
             {
-                if (w > 0 && ww == 0 && cw == 0)
-                {
-                    splitWhiteToCct(w, Config::cfg.led.output, ww, cw);
-                }
-                renderer.setLedRgbcct(i, r, g, b, ww, cw);
+                renderer.setLedRgbcct16(i, to16(r), to16(g), to16(b), ww16, cw16);
             }
             else
             {
@@ -375,10 +473,10 @@ namespace Leds{
 
         if (Config::cfg.led.type == LedType::ANALOG_RGBCCT)
         {
-            const ColorRgbcct mixed = applyAnalogOutputMix(r, g, b, w, ww, cw, output);
+            const ColorRgbcct16 mixed = applyAnalogOutputMix16(to16(r), to16(g), to16(b), to16(w), to16(ww), to16(cw), output);
             Volatile::setRelay(mixed.R || mixed.G || mixed.B || mixed.WW || mixed.CW);
             for(int i = 0; i < getLedsNumber(); i++) {
-                renderer.setLedRgbcct(i, mixed.R, mixed.G, mixed.B, mixed.WW, mixed.CW);
+                renderer.setLedRgbcct16(i, mixed.R, mixed.G, mixed.B, mixed.WW, mixed.CW);
             }
             renderLed(true);
             return;
@@ -443,7 +541,11 @@ namespace Leds{
     }
 
     template void setLed<false>(int, uint8_t, uint8_t, uint8_t);
-    template void setLedW<false>(int, uint8_t, uint8_t, uint8_t, uint8_t);    
+    template void setLedW<false>(int, uint8_t, uint8_t, uint8_t, uint8_t);
     template void setLed<true>(int, uint8_t, uint8_t, uint8_t);
-    template void setLedW<true>(int, uint8_t, uint8_t, uint8_t, uint8_t);    
+    template void setLedW<true>(int, uint8_t, uint8_t, uint8_t, uint8_t);
+    template void setLed16<false>(int, uint16_t, uint16_t, uint16_t);
+    template void setLedW16<false>(int, uint16_t, uint16_t, uint16_t, uint16_t);
+    template void setLed16<true>(int, uint16_t, uint16_t, uint16_t);
+    template void setLedW16<true>(int, uint16_t, uint16_t, uint16_t, uint16_t);
 }

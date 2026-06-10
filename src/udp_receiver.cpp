@@ -66,9 +66,11 @@ void handleDDP(WiFiUDP& udp) {
     const bool brightnessControl = (Volatile::state.brightness != 255);
     auto setPixel = brightnessControl ? Leds::setLed<true> : Leds::setLed<false>;
     auto setPixelW = brightnessControl ? Leds::setLedW<true> : Leds::setLedW<false>;
+    auto setPixel16 = brightnessControl ? Leds::setLed16<true> : Leds::setLed16<false>;
+    auto setPixelW16 = brightnessControl ? Leds::setLedW16<true> : Leds::setLedW16<false>;
 
-    uint8_t buffer[packetSize];    
-    uint8_t* endBuffer = &(buffer[0]) + udp.read(buffer, packetSize);        
+    uint8_t buffer[packetSize];
+    uint8_t* endBuffer = &(buffer[0]) + udp.read(buffer, packetSize);
     DDPHeader* hdr = reinterpret_cast<DDPHeader*>(&(buffer[0]));
     auto rgb = &(buffer[0]) + sizeof(DDPHeader);
 
@@ -103,14 +105,33 @@ void handleDDP(WiFiUDP& udp) {
         rgb += 4;
     }
 
-    const int bytesPerLed = ((hdr->type & 0x38) == 0x18 || hdr->type == 0x03) ? 4 : 3;
+    // DDP type byte: bits 5-3 = data type (001 RGB, 011 RGBW), bits 2-0 = size
+    // code (011 = 8 bits per channel, 100 = 16 bits per channel, big-endian).
+    // Type 0x03 is kept as a legacy RGBW alias.
+    const bool isRgbw = ((hdr->type & 0x38) == 0x18) || hdr->type == 0x03;
+    const bool is16bit = ((hdr->type & 0x07) == 0x04) && hdr->type != 0x03;
+    const int bytesPerLed = (isRgbw ? 4 : 3) * (is16bit ? 2 : 1);
     const int offset = channelOffset / bytesPerLed;
     const int maxLedNumber = Leds::getLedsNumber();
 
-    if (bytesPerLed == 4)
+    if (is16bit)
+    {
+        auto rd16 = [](const uint8_t* p) { return static_cast<uint16_t>((p[0] << 8) | p[1]); };
+        if (isRgbw)
+        {
+            for (int i = offset; rgb + 7 < endBuffer && i < maxLedNumber; rgb += 8)
+                setPixelW16(i++, rd16(rgb), rd16(rgb + 2), rd16(rgb + 4), rd16(rgb + 6));
+        }
+        else
+        {
+            for (int i = offset; rgb + 5 < endBuffer && i < maxLedNumber; rgb += 6)
+                setPixel16(i++, rd16(rgb), rd16(rgb + 2), rd16(rgb + 4));
+        }
+    }
+    else if (isRgbw)
     {
         for (int i = offset; rgb + 3 < endBuffer && i < maxLedNumber; rgb += 4)
-            setPixelW(i++, rgb[0], rgb[1], rgb[2], rgb[3]);        
+            setPixelW(i++, rgb[0], rgb[1], rgb[2], rgb[3]);
     }
     else
     {

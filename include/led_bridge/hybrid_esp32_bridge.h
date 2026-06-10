@@ -94,4 +94,11 @@ struct hybrid_esp32_bridge : public led_bridge
             active->setLedRgbcct(index, r, g, b, ww, cw);
         }
     }
+
+    void setLedRgbcct16(int index, uint16_t r, uint16_t g, uint16_t b, uint16_t ww, uint16_t cw) override
+    {
+        if (active) {
+            active->setLedRgbcct16(index, r, g, b, ww, cw);
+        }
+    }
 };

@@ -81,6 +81,18 @@
     #define HYPERK_DEFAULT_CCT_NEUTRAL_THRESHOLD 24
 #endif
 
+#ifndef HYPERK_DEFAULT_CCT_NEUTRAL_FEATHER
+    #define HYPERK_DEFAULT_CCT_NEUTRAL_FEATHER 16
+#endif
+
+#ifndef HYPERK_DEFAULT_ANALOG_GAMMA
+    #define HYPERK_DEFAULT_ANALOG_GAMMA 2.2f
+#endif
+
+#ifndef HYPERK_DEFAULT_ANALOG_DITHER
+    #define HYPERK_DEFAULT_ANALOG_DITHER 1
+#endif
+
 enum class LedType : uint8_t {
     WS2812 = 0,
     SK6812 = 1,
@@ -149,10 +161,16 @@ struct LedConfig {
         uint8_t warmWhite = HYPERK_DEFAULT_OUTPUT_WARM_WHITE_GAIN;
         uint8_t coldWhite = HYPERK_DEFAULT_OUTPUT_COLD_WHITE_GAIN;
         uint8_t cctNeutralThreshold = HYPERK_DEFAULT_CCT_NEUTRAL_THRESHOLD;
+        uint8_t cctNeutralFeather = HYPERK_DEFAULT_CCT_NEUTRAL_FEATHER;
         uint16_t cctWarmKelvin = HYPERK_DEFAULT_CCT_WARM_KELVIN;
         uint16_t cctColdKelvin = HYPERK_DEFAULT_CCT_COLD_KELVIN;
         uint16_t cctTargetKelvin = HYPERK_DEFAULT_CCT_TARGET_KELVIN;
         bool rgbToWhite = HYPERK_DEFAULT_RGB_TO_WHITE_CONVERSION != 0;
+        // Analog PWM quality: gamma maps the 16-bit linear pipeline onto the
+        // 12-bit duty perceptually (1.0 = legacy linear); dithering uses the
+        // ESP32 LEDC fractional-duty hardware for ~4 extra effective bits.
+        float analogGamma = HYPERK_DEFAULT_ANALOG_GAMMA;
+        bool analogDither = HYPERK_DEFAULT_ANALOG_DITHER != 0;
     };
 
     LedType  type       = static_cast<LedType>(HYPERK_DEFAULT_LED_TYPE);

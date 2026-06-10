@@ -22,5 +22,13 @@ namespace Leds {
 
     template<bool applyBrightness>
     void setLedW(int index, uint8_t r, uint8_t g, uint8_t b, uint8_t w);
+
+    // 16-bit per channel (DDP 16-bit input). Full precision on the analog PWM
+    // pipeline; downscaled to the top 8 bits for digital strips.
+    template<bool applyBrightness>
+    void setLed16(int index, uint16_t r, uint16_t g, uint16_t b);
+
+    template<bool applyBrightness>
+    void setLedW16(int index, uint16_t r, uint16_t g, uint16_t b, uint16_t w);
 };
 

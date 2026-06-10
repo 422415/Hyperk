@@ -9,8 +9,16 @@
 
 #pragma once
 
+#include <math.h>
 #include "driver/ledc.h"
 #include "led_bridge.h"
+
+#if defined(CONFIG_IDF_TARGET_ESP32)
+    // Direct duty register access for hardware duty dithering (classic ESP32:
+    // duty[3:0] is a fractional part the LEDC peripheral dithers at PWM rate).
+    #include "soc/ledc_struct.h"
+    #define HYPERK_ANALOG_HW_DITHER 1
+#endif
 
 #ifndef HYPERK_ANALOG_PWM_FREQ_HZ
     #define HYPERK_ANALOG_PWM_FREQ_HZ 19531
@@ -176,6 +184,12 @@ struct analog_pwm_bridge : public led_bridge
 
     void setLedRgbcct(int index, uint8_t r, uint8_t g, uint8_t b, uint8_t ww, uint8_t cw) override
     {
+        // 8-bit callers join the 16-bit pipeline at equivalent levels (v * 257).
+        setLedRgbcct16(index, r * 257, g * 257, b * 257, ww * 257, cw * 257);
+    }
+
+    void setLedRgbcct16(int index, uint16_t r, uint16_t g, uint16_t b, uint16_t ww, uint16_t cw) override
+    {
         if (index < 0 || index >= _totalLedsNumber) {
             return;
         }
@@ -189,12 +203,12 @@ struct analog_pwm_bridge : public led_bridge
     }
 
 private:
-    uint8_t averageChannel(uint32_t sum) const
+    uint16_t averageChannel(uint32_t sum) const
     {
         if (_sampleCount == 0) {
             return 0;
         }
-        return static_cast<uint8_t>((sum + (_sampleCount / 2)) / _sampleCount);
+        return static_cast<uint16_t>((sum + (_sampleCount / 2)) / _sampleCount);
     }
 
     void resetFrame()
@@ -219,27 +233,55 @@ private:
         }
     }
 
-    static uint32_t dutyFrom8Bit(uint8_t value)
+    // 16-bit input -> 12.4 fixed-point duty (12 integer bits for the PWM timer,
+    // 4 fractional bits for the LEDC hardware dither). Gamma shapes the linear
+    // 16-bit pipeline onto the duty range perceptually; 1.0 = legacy linear.
+    static uint32_t dutyFrom16Bit(uint16_t value, float gamma)
     {
-        return (static_cast<uint32_t>(value) * PWM_MAX_DUTY + 127) / 255;
+        if (value == 0) {
+            return 0;
+        }
+
+        float n = value / 65535.0f;
+        if (gamma > 1.001f || gamma < 0.999f) {
+            n = powf(n, gamma);
+        }
+        return static_cast<uint32_t>(lroundf(n * static_cast<float>(PWM_MAX_DUTY << 4)));
     }
 
-    void setDuty(ledc_channel_t channel, uint8_t value)
+    void setDuty(ledc_channel_t channel, uint16_t value, float gamma, bool dither)
     {
-        ledc_set_duty(PWM_MODE, channel, dutyFrom8Bit(value));
+        const uint32_t duty = dutyFrom16Bit(value, gamma);
+
+        #if defined(HYPERK_ANALOG_HW_DITHER)
+            if (dither) {
+                // Mirror IDF's static duty update (duty_num=1, duty_cycle=1,
+                // duty_scale=0, duty_start), but keep the fractional bits the
+                // driver API drops: duty[3:0] is hardware-dithered at PWM rate.
+                auto& ch = LEDC.channel_group[static_cast<int>(PWM_MODE)].channel[static_cast<int>(channel)];
+                ch.duty.duty = duty;
+                ch.conf1.val = (1UL << 31) | (1UL << 30) | (1UL << 20) | (1UL << 10);
+                return;
+            }
+        #endif
+
+        ledc_set_duty(PWM_MODE, channel, (duty + 8) >> 4);
         ledc_update_duty(PWM_MODE, channel);
     }
 
-    void writeChannels(uint8_t r, uint8_t g, uint8_t b, uint8_t ww, uint8_t cw)
+    void writeChannels(uint16_t r, uint16_t g, uint16_t b, uint16_t ww, uint16_t cw)
     {
         if (!_initialized) {
             return;
         }
 
-        setDuty(_channels[0].channel, r);
-        setDuty(_channels[1].channel, g);
-        setDuty(_channels[2].channel, b);
-        setDuty(_channels[3].channel, ww);
-        setDuty(_channels[4].channel, cw);
+        const float gamma = Config::cfg.led.output.analogGamma;
+        const bool dither = Config::cfg.led.output.analogDither;
+
+        setDuty(_channels[0].channel, r, gamma, dither);
+        setDuty(_channels[1].channel, g, gamma, dither);
+        setDuty(_channels[2].channel, b, gamma, dither);
+        setDuty(_channels[3].channel, ww, gamma, dither);
+        setDuty(_channels[4].channel, cw, gamma, dither);
     }
 };
