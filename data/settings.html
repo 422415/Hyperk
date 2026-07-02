@@ -327,31 +327,29 @@
         </div>
       </details>
       <details>
-        <summary role="button" class="outline secondary">Standby Light State</summary>
+        <summary role="button" class="outline secondary">No-Data / Standby Light</summary>
         <div>
+          <p class="tuning-note">Shown when no HyperHDR or DDP data has arrived for about 6.5 seconds. Saving applies this fallback immediately.</p>
           <label>
             <input type="checkbox" name="standbyOff" role="switch" id="standby-off-toggle">
-            Standby / connection lost light off
+            Keep lights off when no data is received
           </label>
 
-          <label>Brightness (1–255)
+          <label>Fallback brightness (1-255)
             <input type="number" name="brightness" min="1" max="255" value="255" oninput="this.nextElementSibling.value=this.value"><input type="range" min="1" max="255" value="255" oninput="this.previousElementSibling.value=this.value">
           </label>
 
-          <label>Standby Color
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+          <div class="standby-color-block">
+            <label for="standby-color-picker">Fallback static color</label>
+            <div class="standby-color-editor">
+              <input type="color" id="standby-color-picker" value="#c42008" aria-label="Fallback static color">
+              <div class="standby-rgb-grid">
               <label>R <input type="number" name="r" min="0" max="255" value="196" oninput="this.nextElementSibling.value=this.value"><input type="range" min="0" max="255" value="196" oninput="this.previousElementSibling.value=this.value"></label>
               <label>G <input type="number" name="g" min="0" max="255" value="32" oninput="this.nextElementSibling.value=this.value"><input type="range" min="0" max="255" value="32" oninput="this.previousElementSibling.value=this.value"></label>
               <label>B <input type="number" name="b" min="0" max="255" value="8" oninput="this.nextElementSibling.value=this.value"><input type="range" min="0" max="255" value="8" oninput="this.previousElementSibling.value=this.value"></label>
+              </div>
             </div>
-          </label>
-
-          <label>Standby Effect
-            <select name="effect">
-              <option value="0">Solid Color</option>
-              <option value="1">Rainbow</option>
-            </select>
-          </label>
+          </div>
         </div>
       </details>
 
@@ -601,6 +599,8 @@
                   }
               });
 
+              refreshStandbyControls();
+
               if (l["apMode"] === true) {
                   document.getElementById("wifi_configuration_page").style.display = "block";
                   document.getElementById("ota_page").style.display = "block";
@@ -626,6 +626,7 @@
 
       document.addEventListener('DOMContentLoaded', () => {          
           setupOutputPreviewPanel();
+          setupStandbyColorControls();
 
           const relayToggle = document.getElementById('relay-enable-toggle');
           const relayGpioInput = document.querySelector('input[name="relay-gpio"]');
@@ -647,6 +648,70 @@
 
           loadCurrentConfig();
       });
+
+      function standbyChannelInput(name) {
+          return document.querySelector(`input[type="number"][name="${name}"]`);
+      }
+
+      function updateStandbyColorPicker() {
+          const picker = document.getElementById('standby-color-picker');
+          if (!picker) return;
+
+          const toHex = (name) => {
+              const value = Math.max(0, Math.min(255, parseInt(standbyChannelInput(name)?.value || '0', 10)));
+              return value.toString(16).padStart(2, '0');
+          };
+          picker.value = `#${toHex('r')}${toHex('g')}${toHex('b')}`;
+      }
+
+      function refreshStandbyControls() {
+          const disabled = document.getElementById('standby-off-toggle')?.checked === true;
+          const picker = document.getElementById('standby-color-picker');
+          if (picker) picker.disabled = disabled;
+
+          ['brightness', 'r', 'g', 'b'].forEach((name) => {
+              const number = document.querySelector(`input[type="number"][name="${name}"]`);
+              if (!number) return;
+              number.disabled = disabled;
+              const range = number.nextElementSibling;
+              if (range?.type === 'range') range.disabled = disabled;
+          });
+
+          updateStandbyColorPicker();
+      }
+
+      function setupStandbyColorControls() {
+          const picker = document.getElementById('standby-color-picker');
+          const offToggle = document.getElementById('standby-off-toggle');
+          if (!picker || !offToggle) return;
+
+          picker.addEventListener('input', () => {
+              const hex = picker.value.slice(1);
+              const values = {
+                  r: parseInt(hex.slice(0, 2), 16),
+                  g: parseInt(hex.slice(2, 4), 16),
+                  b: parseInt(hex.slice(4, 6), 16)
+              };
+
+              Object.entries(values).forEach(([name, value]) => {
+                  const number = standbyChannelInput(name);
+                  if (!number) return;
+                  number.value = value;
+                  const range = number.nextElementSibling;
+                  if (range?.type === 'range') range.value = value;
+              });
+          });
+
+          ['r', 'g', 'b'].forEach((name) => {
+              const number = standbyChannelInput(name);
+              const range = number?.nextElementSibling;
+              number?.addEventListener('input', updateStandbyColorPicker);
+              range?.addEventListener('input', updateStandbyColorPicker);
+          });
+
+          offToggle.addEventListener('change', refreshStandbyControls);
+          refreshStandbyControls();
+      }
 
       function toggleAnalogNetworkOptions() {
           const isAnalog = document.getElementById('ledType')?.value === "3";

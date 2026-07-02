@@ -67,10 +67,20 @@ namespace Volatile{
     void checkStreamTimeout(){
         if (internalState.streamTimeout > 0 && internalState.streamTimeout < millis())
         {
-            updatePowerOn(false);
+            const auto& led = Config::cfg.led;
+            const bool standbyOn = !led.standbyOff && (led.r || led.g || led.b);
 
             internalState.streamTimeout = 0;
             internalState.live = false;
+
+            updateBrightness(led.brightness);
+            updateStaticColor(
+                led.standbyOff ? 0 : led.r,
+                led.standbyOff ? 0 : led.g,
+                led.standbyOff ? 0 : led.b);
+            updatePowerOn(standbyOn);
+
+            Log::debug("Stream timeout: restored standby state");
         }        
     };    
 
