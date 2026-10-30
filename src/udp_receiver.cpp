@@ -31,6 +31,7 @@
 #include "config.h"
 #include "leds.h"
 #include "volatile_state.h"
+#include "analog_calibration.h"
 
 namespace {
     struct DDPHeader {
@@ -53,6 +54,7 @@ void clearBufferUDP(WiFiUDP &udp, int howMuch) {
 
 void handleDDP(WiFiUDP& udp) {
     int packetSize = udp.parsePacket();
+    if (AnalogCalibration::active()) { clearBufferUDP(udp, packetSize); return; }
     if (packetSize < 5 || packetSize > MTU_SIZE)
     {
         clearBufferUDP(udp, packetSize);
@@ -147,6 +149,7 @@ void handleDDP(WiFiUDP& udp) {
 
 void handleRealTime(WiFiUDP& udp) {    
     int packetSize = udp.parsePacket();
+    if (AnalogCalibration::active()) { clearBufferUDP(udp, packetSize); return; }
     if (packetSize < 5 || packetSize >= MTU_SIZE)
     {
         clearBufferUDP(udp, packetSize);
@@ -209,6 +212,7 @@ void handleRealTime(WiFiUDP& udp) {
 void handleRAW(WiFiUDP& udp)
 {
     int packetSize = udp.parsePacket();
+    if (AnalogCalibration::active()) { clearBufferUDP(udp, packetSize); return; }
     if (packetSize < 3 || packetSize >= MTU_SIZE)
     {
         clearBufferUDP(udp, packetSize);

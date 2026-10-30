@@ -49,6 +49,8 @@
 #include "uni_json_api.h"
 #include "ota.h"
 #include "analog_demo.h"
+#include "analog_calibration.h"
+#include <cstdlib>
 
 namespace {
     constexpr auto mime_application_json = "application/json";
@@ -58,8 +60,89 @@ namespace {
 
 void setupStaticHandlers(AsyncWebServer& server);
 
+namespace {
+    void writeAnalogProfile(JsonObject target, const AnalogColor::Profile& p) {
+        target["red"] = p.red;
+        target["green"] = p.green;
+        target["blue"] = p.blue;
+        target["whiteLevel"] = p.whiteLevel;
+        target["warmFraction"] = p.warmFraction;
+        target["whiteMix"] = p.whiteMix;
+    }
+
+    bool readCalibrationNumber(AsyncWebServerRequest* request, const char* name,
+                               float& value, float maximum = 1.0f) {
+        if (!request->hasParam(name, true)) return false;
+        const String raw = request->getParam(name, true)->value();
+        char* end = nullptr;
+        value = std::strtof(raw.c_str(), &end);
+        return end != raw.c_str() && *end == '\0' && std::isfinite(value) && value >= 0 && value <= maximum;
+    }
+}
+
 void setupWebServer(AsyncWebServer& server) {
     otaUpdateHandler(server);
+
+    server.on("/api/analog_calibration", HTTP_GET, [](AsyncWebServerRequest* request) {
+        JsonDocument doc;
+        doc["deviceName"] = Config::cfg.deviceName;
+        doc["version"] = APP_VERSION;
+        doc["supported"] = Config::cfg.led.type == LedType::ANALOG_RGBCCT;
+        doc["enabled"] = Config::cfg.led.analogCalibrationEnabled;
+        doc["previewActive"] = AnalogCalibration::active();
+        writeAnalogProfile(doc["profile"].to<JsonObject>(), Config::cfg.led.analog);
+        auto* response = request->beginResponseStream(mime_application_json);
+        serializeJson(doc, *response);
+        request->send(response);
+    });
+
+    server.on("/api/analog_calibration", HTTP_POST, [](AsyncWebServerRequest* request) {
+        if (!request->hasParam("action", true)) {
+            request->send(400, mime_text_plain, "Missing calibration action"); return;
+        }
+        const String action = request->getParam("action", true)->value();
+        if (action == "stop") {
+            AnalogCalibration::stop();
+            request->send(200, mime_application_json, "{\"status\":\"stopped\"}"); return;
+        }
+        if (Config::cfg.led.type != LedType::ANALOG_RGBCCT) {
+            request->send(409, mime_text_plain, "Select Analog RGBCCT in LED Hardware first"); return;
+        }
+        if (action != "preview" && action != "save") {
+            request->send(400, mime_text_plain, "Unknown calibration action"); return;
+        }
+        AnalogColor::Profile p;
+        if (!readCalibrationNumber(request, "red", p.red) ||
+            !readCalibrationNumber(request, "green", p.green) ||
+            !readCalibrationNumber(request, "blue", p.blue) ||
+            !readCalibrationNumber(request, "whiteLevel", p.whiteLevel) ||
+            !readCalibrationNumber(request, "warmFraction", p.warmFraction) ||
+            !readCalibrationNumber(request, "whiteMix", p.whiteMix)) {
+            request->send(400, mime_text_plain, "All six calibration values must be between 0 and 1"); return;
+        }
+        if (action == "save") {
+            AppConfig cfg = Config::cfg;
+            cfg.led.analog = p;
+            cfg.led.analogCalibrationEnabled = true;
+            if (!Config::saveConfig(cfg)) {
+                request->send(500, mime_text_plain, "Could not save calibration to device storage"); return;
+            }
+            AnalogCalibration::stop();
+            managerScheduleApplyConfig();
+            request->send(200, mime_application_json, "{\"status\":\"saved\"}"); return;
+        }
+        float pattern, level, r, g, b;
+        if (!readCalibrationNumber(request, "pattern", pattern, 8) || pattern != std::floor(pattern) ||
+            !readCalibrationNumber(request, "level", level) ||
+            !readCalibrationNumber(request, "r", r, 65535) ||
+            !readCalibrationNumber(request, "g", g, 65535) ||
+            !readCalibrationNumber(request, "b", b, 65535)) {
+            request->send(400, mime_text_plain, "Invalid preview pattern, brightness, or RGB value"); return;
+        }
+        AnalogCalibration::preview(p, static_cast<uint8_t>(pattern), level,
+                                   static_cast<uint16_t>(r), static_cast<uint16_t>(g), static_cast<uint16_t>(b));
+        request->send(200, mime_application_json, "{\"status\":\"preview\"}");
+    });
     
     if (isAPMode()){
         server.on("/fwlink", HTTP_GET, [](AsyncWebServerRequest *request){ request->redirect("/"); });
@@ -171,6 +254,9 @@ void setupWebServer(AsyncWebServer& server) {
     });
 
     server.on("/api/analog_demo", HTTP_POST, [](AsyncWebServerRequest *request) {
+        if (AnalogCalibration::active()) {
+            request->send(409, mime_text_plain, "Stop the calibration preview first"); return;
+        }
         if (Config::cfg.led.type != LedType::ANALOG_RGBCCT) {
             request->send(400, mime_application_json, "{\"status\":\"unsupported\"}");
             return;
@@ -199,6 +285,9 @@ void setupWebServer(AsyncWebServer& server) {
 
     // Save settings
     server.on("/save_config", HTTP_POST, [](AsyncWebServerRequest *request) {
+        if (AnalogCalibration::active()) {
+            request->send(409, mime_text_plain, "Stop the calibration preview before changing settings"); return;
+        }
         AppConfig cfg = Config::cfg;
         bool needsRestart = false;
         
@@ -355,6 +444,9 @@ void setupWebServer(AsyncWebServer& server) {
 
     // Raw RGBW channel test
     server.on("/api/test_color", HTTP_POST, [](AsyncWebServerRequest *request) {
+        if (AnalogCalibration::active()) {
+            request->send(409, mime_text_plain, "Stop the calibration preview first"); return;
+        }
         auto readChannel = [request](const char* name) -> uint8_t {
             if (!request->hasParam(name, true)) {
                 return 0;
@@ -385,6 +477,9 @@ void setupWebServer(AsyncWebServer& server) {
 
     // Corrected RGBW test using current unsaved tuning values
     server.on("/api/test_corrected_color", HTTP_POST, [](AsyncWebServerRequest *request) {
+        if (AnalogCalibration::active() || (Config::cfg.led.type == LedType::ANALOG_RGBCCT && Config::cfg.led.analogCalibrationEnabled)) {
+            request->send(409, mime_text_plain, "Use the guided Analog Calibration page"); return;
+        }
         auto readChannel = [request](const char* name) -> uint8_t {
             if (!request->hasParam(name, true)) {
                 return 0;
@@ -425,6 +520,7 @@ void setupWebServer(AsyncWebServer& server) {
         output.warmWhite = readGain("outputWarmWhite", output.warmWhite);
         output.coldWhite = readGain("outputColdWhite", output.coldWhite);
         output.cctNeutralThreshold = readGain("cctNeutralThreshold", output.cctNeutralThreshold);
+        output.cctNeutralFeather = readGain("cctNeutralFeather", output.cctNeutralFeather);
         if (request->hasParam("cctWarmKelvin", true)) output.cctWarmKelvin = constrain(request->getParam("cctWarmKelvin", true)->value().toInt(), 1000, 10000);
         if (request->hasParam("cctColdKelvin", true)) output.cctColdKelvin = constrain(request->getParam("cctColdKelvin", true)->value().toInt(), 1000, 10000);
         if (request->hasParam("cctTargetKelvin", true)) output.cctTargetKelvin = constrain(request->getParam("cctTargetKelvin", true)->value().toInt(), 1000, 10000);
@@ -488,6 +584,7 @@ void setupWebServer(AsyncWebServer& server) {
         led["rgbToWhiteConversion"] = cfg.led.output.rgbToWhite;
         led["analogGamma"] = cfg.led.output.analogGamma;
         led["analogDither"] = cfg.led.output.analogDither;
+        led["analogCalibrationEnabled"] = cfg.led.analogCalibrationEnabled;
         led["ddp16"] = true;   // accepts 16-bit DDP color (types 0x0C / 0x1C)
 
 

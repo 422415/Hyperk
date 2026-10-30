@@ -31,6 +31,7 @@
 #include "manager.h"
 #include "calibration.h"
 #include "volatile_state.h"
+#include "analog_color.h"
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 #if defined(USE_MULTI_ESP32_LED_STRIP) && defined(USE_ANALOG_PWM)
@@ -281,11 +282,9 @@ namespace Leds{
         }
 
         const uint16_t targetKelvin = constrain(output.cctTargetKelvin, warmKelvin, coldKelvin);
-        const uint32_t warmWeight = static_cast<uint32_t>(coldKelvin - targetKelvin) * 255 / (coldKelvin - warmKelvin);
-        const uint32_t coldWeight = 255 - warmWeight;
-
-        ww = scaleGain16(static_cast<uint16_t>((static_cast<uint32_t>(w) * warmWeight + 127) / 255), output.warmWhite);
-        cw = scaleGain16(static_cast<uint16_t>((static_cast<uint32_t>(w) * coldWeight + 127) / 255), output.coldWhite);
+        AnalogColor::splitWhite(w, warmKelvin, coldKelvin, targetKelvin, ww, cw);
+        ww = scaleGain16(ww, output.warmWhite);
+        cw = scaleGain16(cw, output.coldWhite);
     }
 
     inline ColorRgbcct16 applyAnalogOutputMix16(uint16_t r, uint16_t g, uint16_t b, uint16_t w, uint16_t ww, uint16_t cw, const LedConfig::OutputCorrection& output)
@@ -301,19 +300,10 @@ namespace Leds{
             const uint16_t minRgb = min(mixed.R, min(mixed.G, mixed.B));
             const uint16_t maxRgb = max(mixed.R, max(mixed.G, mixed.B));
             const uint16_t diff = maxRgb - minRgb;
-            const uint32_t threshold = to16(output.cctNeutralThreshold);
-            const uint32_t feather = to16(output.cctNeutralFeather);
+            const uint16_t extracted = AnalogColor::extractWhite(
+                minRgb, diff, output.cctNeutralThreshold, output.cctNeutralFeather);
 
-            uint32_t weight = 0;                                  // 0..255
-            if (diff <= threshold) {
-                weight = 255;
-            }
-            else if (feather > 0 && diff < threshold + feather) {
-                weight = (threshold + feather - diff) * 255 / feather;
-            }
-
-            if (weight > 0) {
-                const uint16_t extracted = static_cast<uint32_t>(minRgb) * weight / 255;
+            if (extracted > 0) {
                 mixed.R -= extracted;
                 mixed.G -= extracted;
                 mixed.B -= extracted;
@@ -337,6 +327,13 @@ namespace Leds{
     template<bool applyBrightness>
     inline void setLedAnalog16(int index, uint16_t r, uint16_t g, uint16_t b, uint16_t w)
     {
+        if (Config::cfg.led.analogCalibrationEnabled) {
+            const auto c = AnalogColor::mix(r, g, b, w, Config::cfg.led.analog,
+                                           applyBrightness ? briPlus / 256.0f : 1.0f);
+            renderer.setLedRgbcctLinear16(index, c.r, c.g, c.b, c.ww, c.cw);
+            return;
+        }
+
         if constexpr (applyBrightness) {
             r = scaleBri16(r);
             g = scaleBri16(g);
@@ -464,6 +461,14 @@ namespace Leds{
             }
         }
 
+        renderLed(true);
+    }
+
+    void testAnalogLinear(const AnalogColor::Channels& c)
+    {
+        tryWaitForRenderer();
+        Volatile::setRelay(c.r || c.g || c.b || c.ww || c.cw);
+        renderer.setLedRgbcctLinear16(0, c.r, c.g, c.b, c.ww, c.cw);
         renderLed(true);
     }
 

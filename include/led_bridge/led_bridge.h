@@ -55,4 +55,7 @@ struct led_bridge
     {
         setLedRgbcct(index, r >> 8, g >> 8, b >> 8, ww >> 8, cw >> 8);
     }
+
+    // Already decoded linear PWM values, used only by analog outputs.
+    virtual void setLedRgbcctLinear16(int, uint16_t, uint16_t, uint16_t, uint16_t, uint16_t) {}
 };

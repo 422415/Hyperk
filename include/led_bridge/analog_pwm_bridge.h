@@ -75,6 +75,7 @@ struct analog_pwm_bridge : public led_bridge
     uint32_t _sumWw = 0;
     uint32_t _sumCw = 0;
     uint16_t _sampleCount = 0;
+    bool _linearFrame = false;
 
     bool supportsDoubleBuffering() override
     {
@@ -202,6 +203,12 @@ struct analog_pwm_bridge : public led_bridge
         _sampleCount++;
     }
 
+    void setLedRgbcctLinear16(int index, uint16_t r, uint16_t g, uint16_t b, uint16_t ww, uint16_t cw) override
+    {
+        _linearFrame = true;
+        setLedRgbcct16(index, r, g, b, ww, cw);
+    }
+
 private:
     uint16_t averageChannel(uint32_t sum) const
     {
@@ -219,6 +226,7 @@ private:
         _sumWw = 0;
         _sumCw = 0;
         _sampleCount = 0;
+        _linearFrame = false;
     }
 
     static ledc_timer_bit_t dutyResolution()
@@ -238,6 +246,7 @@ private:
     // 16-bit pipeline onto the duty range perceptually; 1.0 = legacy linear.
     static uint32_t dutyFrom16Bit(uint16_t value, float gamma)
     {
+        if (gamma == 1.0f && PWM_MAX_DUTY == 4095) return AnalogColor::duty12_4(value);
         if (value == 0) {
             return 0;
         }
@@ -275,8 +284,8 @@ private:
             return;
         }
 
-        const float gamma = Config::cfg.led.output.analogGamma;
-        const bool dither = Config::cfg.led.output.analogDither;
+        const float gamma = _linearFrame ? 1.0f : Config::cfg.led.output.analogGamma;
+        const bool dither = _linearFrame || Config::cfg.led.output.analogDither;
 
         setDuty(_channels[0].channel, r, gamma, dither);
         setDuty(_channels[1].channel, g, gamma, dither);

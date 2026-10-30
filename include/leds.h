@@ -13,6 +13,7 @@ namespace Leds {
     int segmentSupported();
     void checkDelayedRender();
     void testRawColor(uint8_t r, uint8_t g, uint8_t b, uint8_t w, uint8_t ww = 0, uint8_t cw = 0);
+    void testAnalogLinear(const AnalogColor::Channels& channels);
     void testCorrectedColor(uint8_t r, uint8_t g, uint8_t b, uint8_t w, const LedConfig::OutputCorrection& output, uint8_t ww = 0, uint8_t cw = 0);
     void renderLed(bool isNewFrame);
     void synchronizeLedsToVolatileStateBeforeDelayedRender();

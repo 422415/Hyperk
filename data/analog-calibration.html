@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Light calibration · Hyperk</title>
+  <link rel="stylesheet" href="/css/analog-calibration.css?v={{VERSION}}">
+  <script src="/analog-calibration.js?v={{VERSION}}" defer></script>
+</head>
+<body>
+  <header class="topbar"><a href="/">Hyperk <span>/ Light calibration</span></a><a href="/settings.html">Device settings</a></header>
+  <main>
+    <div class="intro">
+      <div><p class="eyebrow" id="device-name">QUINLED AN-PENTA-PLUS</p><h1>Make the light feel right.</h1>
+        <p class="lede">Calibrate one lamp at a time, on the wall where you watch. These settings travel with this controller.</p></div>
+      <div class="hardware"><strong>19.5 kHz · 12-bit PWM</strong><span>16-bit color input · fractional duty enabled</span></div>
+    </div>
+    <p id="profile-status" class="notice">Loading the device’s saved calibration…</p>
+    <div id="status" role="status" aria-live="polite">Opening this page does not change the lights.</div>
+    <fieldset id="workspace" disabled>
+      <legend class="sr-only">Guided light calibration</legend>
+      <nav class="steps" aria-label="Calibration steps">
+        <button type="button" data-step="0" aria-current="step"><span>01</span> Check channels</button>
+        <button type="button" data-step="1"><span>02</span> Balance RGB</button>
+        <button type="button" data-step="2"><span>03</span> Match white</button>
+        <button type="button" data-step="3"><span>04</span> Check & save</button>
+      </nav>
+      <div class="layout">
+        <div class="panels">
+          <section data-panel="0">
+            <p class="eyebrow">01 / KNOW YOUR CHANNELS</p><h2>Five outputs. Five simple checks.</h2>
+            <p>Each button lights just that emitter, bypassing color trims. Check that the actual strip shows the named color. If it does not, correct the wiring before balancing color.</p>
+            <div class="channel-buttons">
+              <button type="button" data-pattern="3" class="red">Test red <small>R</small></button>
+              <button type="button" data-pattern="4" class="green">Test green <small>G</small></button>
+              <button type="button" data-pattern="5" class="blue">Test blue <small>B</small></button>
+              <button type="button" data-pattern="6" class="warm">Test warm white <small>WW</small></button>
+              <button type="button" data-pattern="7" class="cool">Test cool white <small>CW</small></button>
+            </div>
+            <p class="hint">Use the same room lighting and projector mode you normally watch with. Start at low test brightness.</p>
+            <button type="button" class="primary next" data-next="1">Continue to RGB balance →</button>
+          </section>
+          <section data-panel="1" hidden>
+            <p class="eyebrow">02 / YOUR NEUTRAL REFERENCE</p><h2>Start with white made from RGB.</h2>
+            <p>Show a neutral gray or white reference on the projector. Turn on the RGB reference and compare the light reflected from the wall. Reduce the color that looks too strong; keep at least one trim at 100% when possible.</p>
+            <button type="button" data-pattern="1">Show RGB reference</button>
+            <div class="controls">
+              <label for="red">Red output <output for="red" id="red-value">100%</output></label><input id="red" data-profile type="range" min="0" max="100" step="0.1" value="100">
+              <label for="green">Green output <output for="green" id="green-value">100%</output></label><input id="green" data-profile type="range" min="0" max="100" step="0.1" value="100">
+              <label for="blue">Blue output <output for="blue" id="blue-value">100%</output></label><input id="blue" data-profile type="range" min="0" max="100" step="0.1" value="100">
+            </div>
+            <p class="hint">Too pink? Reduce red or blue. Too green? Reduce green. A phone or laptop screen is not a calibrated white reference. Visual matching improves consistency; a meter is needed to establish color accuracy.</p>
+            <button type="button" class="primary next" data-next="2">Continue to white LEDs →</button>
+          </section>
+          <section data-panel="2" hidden>
+            <p class="eyebrow">03 / MATCH BEFORE YOU MIX</p><h2>Make the white LEDs agree with RGB.</h2>
+            <p>Switch between A and B at the same test brightness. Adjust B until its tint and brightness are as close to A as possible.</p>
+            <div class="ab"><button type="button" data-pattern="1">A · RGB reference</button><button type="button" data-pattern="2">B · White LEDs</button></div>
+            <div class="controls">
+              <label for="warmFraction">Warm share <output for="warmFraction" id="warmFraction-value">0%</output></label><input id="warmFraction" data-profile type="range" min="0" max="100" step="0.1" value="0">
+              <div class="ends"><span>Cool LEDs only</span><span>Warm LEDs only</span></div>
+              <label for="whiteLevel">White LED output <output for="whiteLevel" id="whiteLevel-value">100%</output></label><input id="whiteLevel" data-profile type="range" min="0" max="100" step="0.1" value="100">
+            </div>
+            <p class="hint">Your strip’s nominal endpoints are about 2800 K and 6500 K. This is a blend control, not a measured Kelvin setting. If B is too dim even at 100%, reduce the three RGB trims together in step 2 and compare again.</p>
+            <p class="notice">If the white LEDs keep a green or pink tint that you cannot match, leave their playback share at 0% in the next step. Warm/cool blending cannot correct every tint.</p>
+            <button type="button" class="primary next" data-next="3">Continue to playback checks →</button>
+          </section>
+          <section data-panel="3" hidden>
+            <p class="eyebrow">04 / BRING IT TOGETHER</p><h2>Choose the white share. Check the shadows.</h2>
+            <p>Decide how much of the shared neutral part of a color the white LEDs supply. Pure red, green, and blue always stay on RGB. Start at 0%, then increase only if you matched the whites in step 3.</p>
+            <div class="controls">
+              <label for="whiteMix">White share during playback <output for="whiteMix" id="whiteMix-value">0%</output></label><input id="whiteMix" data-profile type="range" min="0" max="100" step="0.1" value="0">
+              <div class="ends"><span>All RGB</span><span>All shared white on WW/CW</span></div>
+            </div>
+            <div class="colors" aria-label="Playback test colors">
+              <button type="button" data-color="ffffff">Neutral</button><button type="button" data-color="ff0000">Red</button><button type="button" data-color="00ff00">Green</button><button type="button" data-color="0000ff">Blue</button><button type="button" data-color="ffb87a">Warm scene</button><button type="button" data-color="9abbff">Cool scene</button><button type="button" data-color="fff4ee">Near neutral</button><button type="button" data-color="000000">Black</button>
+            </div>
+            <button type="button" id="ramp">Run a slow shadow ramp</button>
+            <p class="hint">The ramp uses 16-bit levels, from black to 3% light and back over 8 seconds. Look for abrupt tint changes or uneven fades on the wall. Color buttons are input references, not simulations of your LEDs.</p>
+            <div class="review"><strong>Save changes only for this lamp.</strong><p>The new calibration will apply to playback and standby. Playback brightness, distance compensation, and scene timing remain controls in the addon.</p></div>
+          </section>
+        </div>
+        <aside class="test-console">
+          <p class="eyebrow">LIVE LAMP TEST</p><h3 id="pattern-name">Red channel</h3>
+          <label for="test-level">Test brightness <output for="test-level" id="test-level-value">10%</output></label>
+          <input id="test-level" type="range" min="0" max="100" step="0.1" value="10">
+          <p class="hint">Percent of linear light output. This does not change playback brightness.</p>
+          <button type="button" class="primary" id="preview">Start selected test</button>
+          <button type="button" id="stop" disabled>Stop test</button>
+          <p class="hint">While testing, this lamp ignores video colors. Stop restores standby; an active sender resumes on its next frame. If the page disconnects, testing ends within 15 seconds.</p>
+        </aside>
+      </div>
+      <footer class="actions"><span id="draft-status">Draft · nothing saved</span><div><button type="button" id="cancel">Discard draft</button><button type="button" class="primary" id="save">Save calibration & finish</button></div></footer>
+    </fieldset>
+    <details class="about"><summary>What the new calibration changes</summary><p>RGB16 arrives from the AnimeJaNai addon with gamma 2.2. The controller decodes it once, mixes and trims in linear light, and drives 12-bit PWM with fractional duty. The fractional part provides finer average brightness; it is not a native 16-bit PWM timer. No on-screen preview can predict your strip’s spectrum or the color of your wall.</p><p>Saving activates this new engine. Until then, existing saved calibration remains in use. Network, firmware update, and standby settings are kept.</p></details>
+  </main>
+</body>
+</html>

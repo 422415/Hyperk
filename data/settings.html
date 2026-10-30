@@ -20,12 +20,18 @@
     <ul>
       <li><a href="/">Home</a></li>
       <li><a href="/settings.html">Settings</a></li>
+      <li><a href="/analog-calibration.html">Light calibration</a></li>
       <li><a href="/stats.html">Stats</a></li>
     </ul>
   </nav>
 
   <main class="container">
     <h1>Settings</h1>
+    <article id="analog-calibration-link" style="display:none">
+      <h3>Calibrate your An-Penta-Plus</h3>
+      <p>Check the channels, balance RGB, and match the white LEDs with live tests on the actual lamp.</p>
+      <a href="/analog-calibration.html" role="button">Open guided light calibration</a>
+    </article>
 
     <!-- WiFi settings -->
     <form action="/save_wifi" method="POST">
@@ -130,7 +136,7 @@
         </div>
       </details>
 
-      <details ontoggle="loadSubScript('calibration', 'setupCalibration');">
+      <details id="legacy-calibration" ontoggle="loadSubScript('calibration', 'setupCalibration');">
         <summary role="button" class="outline secondary">Output Calibration</summary>
         <div>
           <div id="whiteCalibration" style="display: none;">
@@ -160,7 +166,7 @@
             <p class="tuning-note">Feather softens the white-extraction edge above the threshold so slowly drifting near-neutral colors never jump between the RGB and white channels. 0 = hard edge (legacy).</p>
 
             <h5>Analog PWM quality</h5>
-            <p class="tuning-note">Gamma 2.2 maps the 16-bit pipeline onto the PWM perceptually — smooth dim scenes, no dark-end banding. 1.0 = legacy linear response (use this to keep an old calibration). Hardware dithering adds ~4 effective bits using the ESP32's fractional-duty dither at full PWM rate (invisible, flicker-free).</p>
+            <p class="tuning-note">Legacy profile: gamma decodes the incoming signal for PWM. Fractional duty provides finer average brightness; the timer remains 12-bit. Use guided light calibration for the new linear-light engine.</p>
             <div class="calibration-grid analog-cct-grid">
               <label>PWM gamma <input type="number" name="analogGamma" min="1" max="3" step="0.05" value="2.2"></label>
               <label class="white-mixer-control">
@@ -715,6 +721,9 @@
 
       function toggleAnalogNetworkOptions() {
           const isAnalog = document.getElementById('ledType')?.value === "3";
+          document.getElementById('analog-calibration-link').style.display = isAnalog ? 'block' : 'none';
+          document.getElementById('legacy-calibration').style.display = isAnalog ? 'none' : 'block';
+          document.getElementById('output-preview-panel').style.display = isAnalog ? 'none' : '';
           const ethernetOption = document.getElementById('ethernetOption');
           const ethernetToggle = document.getElementById('ethernet-enabled-toggle');
           const analogDemoSection = document.getElementById('analogDemoSection');

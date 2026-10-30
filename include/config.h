@@ -4,6 +4,7 @@
 #include <ArduinoJson.h>
 #include <vector>
 #include "logger.h"
+#include "analog_color.h"
 
 #define CONFIG_FILE "/config.json"
 
@@ -182,6 +183,9 @@ struct LedConfig {
     uint8_t  r = 196, g = 32, b = 8;
     bool     standbyOff = false;
     OutputCorrection output;
+    AnalogColor::Profile analog;
+    // Explicit opt-in: an OTA update alone must not reinterpret an old profile.
+    bool analogCalibrationEnabled = false;
     uint8_t  effect     = 0;
 
     struct Calibration {

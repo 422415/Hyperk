@@ -40,8 +40,9 @@ namespace Config {
     }
 
     bool saveConfig(const AppConfig& cfg) {
+        if (!Storage::saveConfig(cfg)) return false;
         internalCfg = cfg;
-        return Storage::saveConfig(internalCfg);
+        return true;
     }   
 };
 

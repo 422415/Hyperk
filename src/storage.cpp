@@ -103,6 +103,16 @@ namespace Storage {
         cfg.led.output.analogGamma = doc["output"]["analogGamma"] | cfg.led.output.analogGamma;
         cfg.led.output.analogDither = doc["output"]["analogDither"] | cfg.led.output.analogDither;
 
+        const JsonObject analog = doc["analogCalibration"].as<JsonObject>();
+        cfg.led.analog.red = analog["red"] | 1.0f;
+        cfg.led.analog.green = analog["green"] | 1.0f;
+        cfg.led.analog.blue = analog["blue"] | 1.0f;
+        cfg.led.analog.whiteLevel = analog["whiteLevel"] | 1.0f;
+        cfg.led.analog.warmFraction = analog["warmFraction"] | 0.0f;
+        cfg.led.analog.whiteMix = analog["whiteMix"] | 0.0f;
+        cfg.led.analogCalibrationEnabled = (analog["version"] | 0) == 2 && AnalogColor::valid(cfg.led.analog);
+        if (!AnalogColor::valid(cfg.led.analog)) cfg.led.analog = AnalogColor::Profile{};
+
         cfg.led.calibration.gain  = doc["calibration"]["gain"]  | 0xFF;
         cfg.led.calibration.red   = doc["calibration"]["red"]   | 0xA0;
         cfg.led.calibration.green = doc["calibration"]["green"] | 0xA0;
@@ -158,6 +168,15 @@ namespace Storage {
         doc["output"]["rgbToWhite"] = cfg.led.output.rgbToWhite;
         doc["output"]["analogGamma"] = cfg.led.output.analogGamma;
         doc["output"]["analogDither"] = cfg.led.output.analogDither;
+
+        JsonObject analog = doc["analogCalibration"].to<JsonObject>();
+        analog["version"] = cfg.led.analogCalibrationEnabled ? 2 : 0;
+        analog["red"] = cfg.led.analog.red;
+        analog["green"] = cfg.led.analog.green;
+        analog["blue"] = cfg.led.analog.blue;
+        analog["whiteLevel"] = cfg.led.analog.whiteLevel;
+        analog["warmFraction"] = cfg.led.analog.warmFraction;
+        analog["whiteMix"] = cfg.led.analog.whiteMix;
 
         doc["calibration"]["gain"]  = cfg.led.calibration.gain;
         doc["calibration"]["red"]   = cfg.led.calibration.red;

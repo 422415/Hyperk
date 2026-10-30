@@ -35,6 +35,13 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Check analog color precision
+        run: |
+          g++ -std=c++17 -Wall -Wextra -Werror -Iinclude tests/analog_color_test.cpp -o "$RUNNER_TEMP/analog-color-test"
+          "$RUNNER_TEMP/analog-color-test"
+          g++ -std=c++17 -Wall -Wextra -Werror -pthread -Itests/fakes -Iinclude tests/analog_calibration_test.cpp src/analog_calibration.cpp -o "$RUNNER_TEMP/analog-calibration-test"
+          "$RUNNER_TEMP/analog-calibration-test"
+
       - name: Cache PlatformIO - ClassicESP
         uses: actions/cache@v5
         with:

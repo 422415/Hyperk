@@ -33,6 +33,7 @@
 #include "mdns_service.h"
 #include "volatile_state.h"
 #include "analog_demo.h"
+#include "analog_calibration.h"
 
 Stats stats;
 
@@ -60,10 +61,13 @@ void managerScheduleReboot(uint32_t delay_ms)
 
 void managerLoop()
 {
-    Volatile::checkStreamTimeout();
-    AnalogDemo::loop();
+    AnalogCalibration::loop();
+    if (!AnalogCalibration::active()) {
+        Volatile::checkStreamTimeout();
+        AnalogDemo::loop();
+    }
 
-    if (AnalogDemo::active())
+    if (AnalogDemo::active() || AnalogCalibration::active())
     {
         Leds::checkDelayedRender();
     }
